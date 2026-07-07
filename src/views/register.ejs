@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>הרשמה - Preread</title>
+    <%- include('partials/theme-init') %>
+    <%- include('partials/styles') %>
+    <%- include('partials/alerts-head') %>
+    <script src="/js/shared/auth-social.js"></script>
+  </head>
+  <body class="auth-page d-flex align-items-center justify-content-center min-vh-100">
+    <%- include('partials/theme-toggle') %>
+    <main class="container auth-container py-4">
+      <div class="card auth-card shadow">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="text-center h3 mb-1">הרשמה</h1>
+          <p class="subtitle text-center text-muted mb-4">צור חשבון והתחל לצבור XP ולהשיג הישגים</p>
+          <%- include('partials/google-signin') %>
+          <form id="registerForm">
+            <div class="mb-3">
+              <label for="name" class="form-label fw-semibold">שם</label>
+              <input
+                type="text"
+                class="form-control"
+                id="name"
+                name="name"
+                required
+                autocomplete="name"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label fw-semibold">אימייל</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                required
+                autocomplete="email"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label fw-semibold">סיסמה</label>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                name="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+              />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">הירשם</button>
+          </form>
+
+          <p class="auth-switch text-center text-muted mt-4 mb-0">
+            יש לך חשבון? <a href="/login">התחבר כאן</a>
+          </p>
+        </div>
+      </div>
+    </main>
+    <script src="/js/pages/register.js"></script>
+    <%- include('partials/scripts') %>
+  </body>
+</html>

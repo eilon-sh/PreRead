@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>העלאה - Preread</title>
+    <%- include('partials/theme-init') %>
+    <%- include('partials/styles') %>
+    <%- include('partials/csrf-meta') %>
+    <%- include('partials/alerts-head') %>
+    <script src="/js/shared/format.js"></script>
+    <script src="/js/shared/api.js"></script>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+    <main class="container app-container">
+      <section class="card mb-4">
+        <div class="card-body">
+          <form id="uploadForm" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="pdf" class="form-label fw-semibold">קובץ PDF</label>
+              <div class="file-picker">
+                <div class="file-input-wrap d-flex align-items-center flex-wrap gap-2">
+                  <input
+                    type="file"
+                    id="pdf"
+                    name="pdf"
+                    class="file-input-native"
+                    accept="application/pdf"
+                    required
+                  />
+                  <label for="pdf" class="btn btn-secondary file-input-btn mb-0">בחר קובץ</label>
+                  <span id="fileName" class="file-name text-muted" title="">לא נבחר קובץ</span>
+                </div>
+              </div>
+              <p class="text-muted small mt-2 mb-0">
+                לא בטוחים מה הרמה? בדקו כאן:
+                <a
+                  href="https://europa-school.co.uk/language-level-test/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >מבחן רמת שפה</a
+                >
+              </p>
+            </div>
+            <div class="upload-actions d-flex align-items-stretch gap-2">
+              <div class="select-field input-group">
+                <span class="select-field-label input-group-text">רמת CEFR</span>
+                <select id="minCefr" name="minCefr" class="form-select" aria-label="רמת CEFR">
+                  <option value="B1">B1 ומעלה</option>
+                  <option value="B2">B2 ומעלה</option>
+                  <option value="C1">C1 ומעלה</option>
+                  <option value="C2">C2 בלבד</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary upload-submit-btn" id="uploadBtn">
+                העלה וחלץ מילים
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="card mb-4">
+        <div class="card-body">
+          <h2 class="h5 mb-3">מסמכים קיימים</h2>
+          <div id="documentsList" class="documents-list d-flex flex-column gap-2">
+            <p class="text-muted mb-0">טוען...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="/js/pages/upload.js"></script>
+    <%- include('partials/scripts') %>
+  </body>
+</html>

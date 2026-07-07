@@ -1,0 +1,323 @@
+/* Dark mode emphasis - loaded after component styles */
+
+[data-theme="dark"] {
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--text);
+  --bs-border-color: var(--border);
+  --bs-primary: var(--primary);
+  --bs-primary-rgb: 139, 154, 255;
+  --bs-link-color: var(--primary);
+  --bs-link-hover-color: var(--primary-hover);
+  --bs-emphasis-color: var(--text);
+  --bs-secondary-color: var(--muted);
+  --bs-tertiary-bg: var(--surface-2);
+}
+
+/* Surfaces & depth */
+[data-theme="dark"] .card,
+[data-theme="dark"] .auth-card,
+[data-theme="dark"] .game-card-play,
+[data-theme="dark"] .game-done,
+[data-theme="dark"] .doc-item {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface) 96%, #fff 4%),
+    var(--surface)
+  );
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] .card .h5 {
+  color: var(--text);
+}
+
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] .text-muted {
+  color: var(--muted) !important;
+}
+
+/* Primary actions */
+[data-theme="dark"] .btn-primary {
+  box-shadow: 0 2px 12px rgba(139, 154, 255, 0.35);
+  --bs-btn-hover-bg: var(--primary-hover);
+  --bs-btn-hover-border-color: var(--primary-hover);
+}
+
+[data-theme="dark"] .btn-primary:hover,
+[data-theme="dark"] .btn-primary:focus-visible {
+  box-shadow: 0 4px 18px rgba(139, 154, 255, 0.45);
+}
+
+[data-theme="dark"] .btn-outline-primary {
+  --bs-btn-border-color: color-mix(in srgb, var(--primary) 65%, var(--border-strong));
+  --bs-btn-hover-bg: color-mix(in srgb, var(--primary) 18%, transparent);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-hover-color: var(--primary-hover);
+}
+
+[data-theme="dark"] .btn-outline-secondary,
+[data-theme="dark"] .btn-secondary {
+  --bs-btn-border-color: var(--border-strong);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--primary) 35%, var(--border-strong));
+}
+
+[data-theme="dark"] .btn-outline-danger {
+  --bs-btn-color: var(--error);
+  --bs-btn-border-color: color-mix(in srgb, var(--error) 55%, var(--border));
+  --bs-btn-hover-bg: color-mix(in srgb, var(--error) 15%, transparent);
+  --bs-btn-hover-border-color: var(--error);
+}
+
+/* Forms */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  border-color: var(--border-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  border-color: var(--primary);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 0 0 0.2rem rgba(139, 154, 255, 0.28);
+}
+
+[data-theme="dark"] .input-group-text,
+[data-theme="dark"] .select-field-label {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+@media (max-width: 768px) {
+  [data-theme="dark"] .file-picker {
+    border-color: var(--border-strong);
+    background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
+  }
+}
+
+/* Tables */
+[data-theme="dark"] .table-light {
+  --bs-table-bg: var(--surface-3);
+  border-bottom: 2px solid var(--border-strong);
+}
+
+[data-theme="dark"] .table-hover > tbody > tr:hover > * {
+  --bs-table-bg-state: var(--surface-3);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* Badges & status */
+[data-theme="dark"] .badge.text-bg-secondary {
+  background-color: var(--surface-3) !important;
+  border: 1px solid var(--border-strong);
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .badge-info {
+  border: 1px solid color-mix(in srgb, var(--status-info-text) 35%, transparent);
+}
+
+[data-theme="dark"] .badge-error {
+  color: var(--error) !important;
+  border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+[data-theme="dark"] .alert,
+[data-theme="dark"] .status {
+  border-width: 1px;
+  border-style: solid;
+}
+
+[data-theme="dark"] .alert-info,
+[data-theme="dark"] .status-info {
+  border-color: color-mix(in srgb, var(--status-info-text) 40%, transparent);
+}
+
+[data-theme="dark"] .alert-success,
+[data-theme="dark"] .status-success {
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+[data-theme="dark"] .alert-danger,
+[data-theme="dark"] .status-error {
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+
+/* Nav */
+[data-theme="dark"] .app-nav {
+  border-bottom-color: var(--nav-divider);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .app-nav .nav-link.active {
+  box-shadow:
+    inset 0 0 0 1px var(--nav-active-ring),
+    0 0 12px rgba(139, 154, 255, 0.15);
+}
+
+[data-theme="dark"] .theme-toggle,
+[data-theme="dark"] .app-nav-toggler {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border-strong));
+}
+
+/* Flashcards & study */
+[data-theme="dark"] .flashcard-back {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+}
+
+[data-theme="dark"] .flashcard-word {
+  color: var(--primary-hover);
+}
+
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .game-stats-mini {
+  color: var(--primary-hover);
+  text-shadow: 0 0 20px rgba(139, 154, 255, 0.2);
+}
+
+[data-theme="dark"] .level-badge {
+  box-shadow: 0 4px 16px rgba(139, 154, 255, 0.35);
+}
+
+[data-theme="dark"] .xp-bar {
+  box-shadow: 0 0 12px rgba(139, 154, 255, 0.4);
+}
+
+[data-theme="dark"] .stat-item {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-3);
+}
+
+/* Games */
+[data-theme="dark"] .game-card {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+[data-theme="dark"] .game-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-glow);
+}
+
+[data-theme="dark"] .match-item,
+[data-theme="dark"] .quiz-option {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+}
+
+[data-theme="dark"] .match-item.selected,
+[data-theme="dark"] .quiz-option:hover:not(.answered) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px rgba(139, 154, 255, 0.2);
+}
+
+/* Achievements */
+[data-theme="dark"] .achievement-item {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+[data-theme="dark"] .achievement-item.unlocked {
+  border-color: var(--achievement-unlocked-border);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 25%, transparent);
+}
+
+[data-theme="dark"] .achievement-reward {
+  color: var(--primary-hover);
+}
+
+/* Landing */
+[data-theme="dark"] .stitch-header {
+  border-bottom-color: var(--nav-divider);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .stitch-card,
+[data-theme="dark"] .stitch-feature,
+[data-theme="dark"] .stitch-step {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .stitch-feature-primary {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border-strong));
+  box-shadow: var(--shadow-glow);
+}
+
+[data-theme="dark"] .stitch-pill,
+[data-theme="dark"] .stitch-level {
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+[data-theme="dark"] .stitch-bottom-card {
+  box-shadow: 0 8px 32px rgba(139, 154, 255, 0.35);
+}
+
+[data-theme="dark"] .stitch-primary-btn {
+  box-shadow: 0 4px 16px rgba(139, 154, 255, 0.35);
+}
+
+/* Links */
+[data-theme="dark"] a:not(.btn):not(.nav-link):not(.stitch-link-btn) {
+  color: var(--primary);
+}
+
+[data-theme="dark"] a:not(.btn):not(.nav-link):not(.stitch-link-btn):hover {
+  color: var(--primary-hover);
+}
+
+/* Toast & XP */
+[data-theme="dark"] .xp-toast {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* CEFR badges stay vivid in dark */
+[data-theme="dark"] .cefr-B1 {
+  background: #4a3a10;
+  color: #fde68a;
+}
+[data-theme="dark"] .cefr-B2 {
+  background: #4a2a10;
+  color: #fdba74;
+}
+[data-theme="dark"] .cefr-C1 {
+  background: #3b1f5c;
+  color: #e9d5ff;
+}
+[data-theme="dark"] .cefr-C2 {
+  background: #4a1515;
+  color: #fecaca;
+}
+
+/* SweetAlert2 */
+[data-theme="dark"] .swal-dark-popup {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+
+[data-theme="dark"] .swal-dark-title {
+  color: var(--text);
+}
+
+[data-theme="dark"] .swal-dark-text {
+  color: var(--muted);
+}

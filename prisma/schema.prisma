@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Better Auth models ---
+
+model User {
+  id            String     @id
+  name          String
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      Session[]
+  accounts      Account[]
+  documents     Document[]
+  stats         UserStats?
+  userAchievements UserAchievement[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// --- App models ---
+
+model Document {
+  id               Int       @id @default(autoincrement())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename         String
+  processingStatus String    @default("processing")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  processedAt      DateTime?
+  words            Word[]
+
+  @@index([userId])
+  @@map("documents")
+}
+
+model Word {
+  id         Int        @id @default(autoincrement())
+  documentId Int
+  document   Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  word       String
+  definition String
+  cefr       String
+  context    String?
+  translation String?
+  flashcard  Flashcard?
+
+  @@index([documentId])
+  @@index([cefr])
+  @@map("words")
+}
+
+model Flashcard {
+  id           Int     @id @default(autoincrement())
+  wordId       Int     @unique
+  word         Word    @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  easeFactor   Float   @default(2.5)
+  interval     Int     @default(0)
+  repetitions  Int     @default(0)
+  nextReview   String
+  lastReviewed String?
+
+  @@index([nextReview])
+  @@map("flashcards")
+}
+
+model UserStats {
+  userId            String  @id
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp                Int     @default(0)
+  level             Int     @default(1)
+  currentStreak     Int     @default(0)
+  longestStreak     Int     @default(0)
+  lastStudyDate     String?
+  totalReviews      Int     @default(0)
+  masteredWords     Int     @default(0)
+  perfectStreak     Int     @default(0)
+  dailyReviewsToday Int     @default(0)
+  dailyReviewsDate  String?
+
+  @@map("user_stats")
+}
+
+model Achievement {
+  id                Int               @id @default(autoincrement())
+  code              String            @unique
+  name              String
+  description       String
+  icon              String
+  xpReward          Int               @default(0)
+  requirementType   String
+  requirementValue  Int               @default(1)
+  userAchievements  UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId Int
+  unlockedAt    DateTime @default(now())
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}

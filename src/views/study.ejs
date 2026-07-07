@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>לימוד - Preread</title>
+    <%- include('partials/theme-init') %>
+    <%- include('partials/styles') %>
+    <%- include('partials/csrf-meta') %>
+    <%- include('partials/alerts-head') %>
+    <script src="/js/shared/format.js"></script>
+    <script src="/js/shared/api.js"></script>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+    <main class="container app-container">
+      <h1 class="h3">לימוד עם SM-2</h1>
+      <p class="subtitle text-muted">פלאשקארדים עם חזרה מרווחת - דרג את הידע שלך</p>
+
+      <section class="card mb-4 stats-bar text-center" id="statsBar">
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-center gap-2">
+          <span id="dueCount">טוען...</span>
+          <span id="gameStats" class="game-stats-mini"></span>
+          <button class="btn btn-secondary btn-sm" id="reloadBtn" type="button">רענן</button>
+        </div>
+      </section>
+
+      <div id="xpToast" class="xp-toast hidden"></div>
+
+      <section class="card mb-4 flashcard-container text-center" id="flashcardArea">
+        <div class="card-body" style="min-height: 300px">
+          <p class="text-muted mb-0">טוען כרטיסים...</p>
+        </div>
+      </section>
+    </main>
+    <script src="/js/pages/study.js"></script>
+    <%- include('partials/scripts') %>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+const DEV_AUTH_SECRET = 'dev-secret-key-for-local-testing-only-32chars';
+
+export function validateProductionConfig(config) {
+  if (!config.isProduction) return;
+
+  const errors = [];
+
+  if (!process.env.DATABASE_URL) {
+    errors.push('DATABASE_URL is required in production');
+  }
+
+  if (!process.env.BETTER_AUTH_SECRET || config.betterAuthSecret === DEV_AUTH_SECRET) {
+    errors.push('BETTER_AUTH_SECRET must be set to a secure value in production');
+  }
+
+  if (config.betterAuthUrl.includes('localhost')) {
+    errors.push('BETTER_AUTH_URL must not point to localhost in production');
+  }
+
+  if (config.mockBedrock) {
+    errors.push('MOCK_BEDROCK must not be true in production');
+  }
+
+  if (!config.mockBedrock) {
+    if (!config.awsRegion) {
+      errors.push('AWS_REGION is required when Bedrock is enabled');
+    }
+    if (!process.env.AWS_ACCESS_KEY_ID && !process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI) {
+      errors.push(
+        'AWS_ACCESS_KEY_ID is required when Bedrock is enabled (or run on AWS with an IAM role)',
+      );
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Production configuration errors:\n- ${errors.join('\n- ')}`);
+  }
+}

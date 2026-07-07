@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>משחקים - Preread</title>
+    <%- include('partials/theme-init') %>
+    <%- include('partials/styles') %>
+    <%- include('partials/csrf-meta') %>
+    <%- include('partials/alerts-head') %>
+    <script src="/js/shared/format.js"></script>
+    <script src="/js/shared/api.js"></script>
+  </head>
+  <body>
+    <%- include('partials/nav') %>
+    <main class="container app-container">
+      <h1 class="h3">משחקי מילים</h1>
+      <p class="subtitle text-muted">תרגל את האוצר מילים שלך בדרך מהנה וצבור XP</p>
+
+      <section class="card mb-4">
+        <div class="card-body">
+          <div class="filters d-flex flex-wrap align-items-end gap-3">
+            <div class="mb-0">
+              <label for="docFilter" class="form-label fw-semibold small mb-1">מסמך</label>
+              <select id="docFilter" class="form-select form-select-sm">
+                <option value="">הכל</option>
+              </select>
+            </div>
+            <div class="mb-0">
+              <label for="cefrFilter" class="form-label fw-semibold small mb-1">רמת CEFR</label>
+              <select id="cefrFilter" class="form-select form-select-sm">
+                <option value="">הכל</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="xpToast" class="xp-toast hidden"></div>
+
+      <div id="emptyState" class="card game-empty text-center hidden mb-4">
+        <div class="card-body py-5">
+          <p class="mb-0">
+            אין מספיק מילים למשחק. <a href="/upload">העלה PDF</a> וחלץ מילים כדי להתחיל.
+          </p>
+        </div>
+      </div>
+
+      <div id="gamePicker" class="game-picker row g-3 mb-4"></div>
+
+      <h2 id="gameTitle" class="game-active-title h5 hidden"></h2>
+      <p id="scoreBar" class="game-score-bar fw-semibold text-muted hidden"></p>
+      <div id="gameArea" class="hidden"></div>
+    </main>
+    <script src="/js/pages/games.js"></script>
+    <%- include('partials/scripts') %>
+  </body>
+</html>

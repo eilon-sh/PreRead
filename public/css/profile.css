@@ -1,0 +1,119 @@
+.profile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-header {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.level-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+[data-theme="dark"] .level-badge {
+  color: #0d0f14;
+}
+
+.xp-bar-wrap {
+  background: var(--surface-2);
+  border-radius: 999px;
+  height: 12px;
+  margin: 1rem auto;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.xp-bar {
+  background: linear-gradient(90deg, var(--primary), #7c3aed);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.xp-text {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.stat-item {
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.achievement-item.locked {
+  opacity: 0.55;
+}
+
+.achievement-item.unlocked {
+  background: var(--achievement-unlocked-bg);
+  border-color: var(--achievement-unlocked-border) !important;
+}
+
+.achievement-icon {
+  font-size: 2rem;
+  min-width: 2.5rem;
+  text-align: center;
+}
+
+.achievement-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.achievement-reward {
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.achievement-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.achievement-stats {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.xp-toast {
+  position: fixed;
+  top: calc(var(--nav-height) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--toast-bg);
+  color: var(--toast-text);
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  z-index: 200;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.3s ease;
+  max-width: calc(100vw - 2rem);
+}
+
+.rate-limit-placeholder {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}

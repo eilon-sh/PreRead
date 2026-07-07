@@ -1,0 +1,33 @@
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .app-nav,
+  .subtitle,
+  .filters,
+  .words-summary.no-print,
+  .no-print {
+    display: none !important;
+  }
+
+  .container,
+  .app-container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .card {
+    border: none;
+    box-shadow: none;
+  }
+
+  .card-body {
+    padding: 0;
+  }
+
+  #wordsTable {
+    overflow: visible;
+  }
+}

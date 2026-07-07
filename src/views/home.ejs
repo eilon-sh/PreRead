@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Preread - כלי לסטודנטים: הפכו מאמרים וחומרי קורס לכרטיסיות לימוד עם חילוץ מילים אקדמיות לפי CEFR."
+    />
+    <meta name="theme-color" content="#4f46e5" />
+    <title>Preread - למדו אנגלית אקדמית מהקורסים שלכם</title>
+    <%- include('partials/theme-init') %>
+    <%- include('partials/styles') %>
+  </head>
+  <body class="stitch-landing-page">
+    <header class="stitch-header">
+      <div class="container stitch-shell stitch-header-inner">
+        <div class="stitch-header-actions d-flex align-items-center gap-2">
+          <%- include('partials/theme-toggle') %>
+          <a href="/login" class="stitch-link-btn">התחברות</a>
+          <a href="/register" class="stitch-primary-btn stitch-small-btn">הרשמה בחינם</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stitch-hero">
+        <div class="container stitch-shell">
+          <div class="row align-items-center g-4 g-lg-5">
+            <div class="col-lg-6 stitch-hero-copy">
+              <div class="stitch-pill">חדש: בינה מלאכותית לניתוח טקסטים</div>
+              <h1>ללמוד אנגלית אקדמית מתוך <span>המחקרים שלך</span></h1>
+              <p>
+                העלה מאמרי PDF, המערכת שלנו תסרוק את המילים המורכבות ותיצור עבורך כרטיסיות לימוד
+                מותאמות אישית ברמה הגבוהה ביותר.
+              </p>
+              <div class="stitch-hero-actions d-flex flex-wrap gap-2">
+                <a href="/register" class="stitch-primary-btn stitch-large-btn">העלה קובץ עכשיו</a>
+                <a href="#how-it-works" class="stitch-outline-btn stitch-large-btn">איך זה עובד?</a>
+              </div>
+            </div>
+            <div
+              class="col-lg-6 stitch-hero-visual d-none d-md-flex justify-content-center"
+              aria-hidden="true"
+            >
+              <div class="stitch-hero-glow"></div>
+              <article class="stitch-card">
+                <div class="stitch-card-top d-flex justify-content-between align-items-center">
+                  <span class="stitch-level">C1 Advanced</span>
+                  <span class="stitch-audio">🔊</span>
+                </div>
+                <div class="stitch-card-main text-center">
+                  <h2>Hypothesis</h2>
+                  <p>/haɪˈpɒθəsɪs/</p>
+                </div>
+                <div class="stitch-card-def">
+                  <h3>הגדרה בעברית</h3>
+                  <p>השערה, היפותזה</p>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stitch-features">
+        <div class="container stitch-shell">
+          <div class="stitch-section-title">
+            <h2>כל מה שצריך כדי לשלוט בשפה האקדמית</h2>
+            <span></span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-lg-8">
+              <article class="stitch-feature stitch-feature-wide h-100">
+                <div class="stitch-icon">📄</div>
+                <h3>ניתוח מאמרים מקצועיים</h3>
+                <p>
+                  האלגוריתם מזהה מונחים אקדמיים, מילות קישור ומבני תחביר מורכבים בתוך המאמרים שאתה
+                  מעלה.
+                </p>
+              </article>
+            </div>
+
+            <div class="col-12 col-lg-4">
+              <article class="stitch-feature stitch-feature-primary h-100">
+                <div class="stitch-icon">📊</div>
+                <h3>דירוג רמת CEFR</h3>
+                <p>כל מילה מתויגת לפי רמות B2-C2.</p>
+              </article>
+            </div>
+
+            <div class="col-12 col-md-5">
+              <article class="stitch-feature stitch-feature-accent h-100">
+                <h3>אלגוריתם SM-2</h3>
+                <p>חזרה מרווחת שמתזמנת למידה בדיוק כשצריך.</p>
+              </article>
+            </div>
+
+            <div class="col-12 col-md-7">
+              <article
+                class="stitch-feature stitch-feature-game h-100 d-flex align-items-center justify-content-between gap-3"
+              >
+                <div>
+                  <h3>למידה חווייתית</h3>
+                  <p>משחקים, XP והישגים שהופכים את הלמידה לחלק מהשגרה.</p>
+                </div>
+                <span class="stitch-game-icon">🎮</span>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" class="stitch-steps">
+        <div class="container stitch-shell">
+          <h2 class="text-center">3 צעדים להצלחה אקדמית</h2>
+          <div class="row g-3">
+            <% const steps = ['מעלים קובץ PDF', 'המערכת מנתחת ומחלצת מילים', 'לומדים עם כרטיסיות
+            חכמות']; %> <% steps.forEach(function(step, i) { %>
+            <div class="col-md-4">
+              <article class="stitch-step h-100">
+                <span class="stitch-step-num"><%= i + 1 %></span>
+                <h3><%= step %></h3>
+              </article>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+      </section>
+
+      <section class="stitch-bottom-cta">
+        <div class="container stitch-shell">
+          <div class="stitch-bottom-card text-center">
+            <h2>מוכן לשדרג את האנגלית שלך?</h2>
+            <a href="/register" class="stitch-light-btn stitch-large-btn">התחל בחינם עכשיו</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    <%- include('partials/scripts') %>
+  </body>
+</html>

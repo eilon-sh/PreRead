@@ -1,0 +1,36 @@
+<nav class="navbar navbar-expand-md sticky-top app-nav">
+  <div class="container app-container">
+    <a href="/upload" class="navbar-brand app-nav-brand">
+      <img src="/images/logo.svg" alt="Preread" class="nav-logo" width="36" height="36" />
+    </a>
+    <div class="d-flex align-items-center gap-2 ms-auto order-md-2">
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="החלף ערכת צבעים">
+        <span class="theme-icon theme-icon-light" aria-hidden="true">☀️</span>
+        <span class="theme-icon theme-icon-dark" aria-hidden="true">🌙</span>
+      </button>
+      <button
+        class="navbar-toggler app-nav-toggler"
+        id="navToggle"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navLinks"
+        aria-controls="navLinks"
+        aria-expanded="false"
+        aria-label="תפריט"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+    <div class="collapse navbar-collapse order-md-1" id="navLinks">
+      <ul class="navbar-nav app-nav-links me-auto mb-2 mb-md-0">
+        <li class="nav-item"><a class="nav-link" href="/upload">העלאה</a></li>
+        <li class="nav-item"><a class="nav-link" href="/study">לימוד</a></li>
+        <li class="nav-item"><a class="nav-link" href="/games">משחקים</a></li>
+        <li class="nav-item"><a class="nav-link" href="/profile">פרופיל</a></li>
+        <li class="nav-item"><a class="nav-link" href="/achievements">הישגים</a></li>
+      </ul>
+      <button class="nav-logout" id="logoutBtn" type="button">יציאה</button>
+    </div>
+  </div>
+</nav>
+<script src="/js/shared/nav.js"></script>

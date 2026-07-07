@@ -1,0 +1,1521 @@
+openapi: 3.1.0
+info:
+  title: Preread API
+  version: 1.0.0
+  description: |
+    REST API for **Preread** (CEFR Flashcards) - upload PDFs, extract CEFR vocabulary,
+    study with SM-2 spaced repetition, and earn XP through reviews and minigames.
+
+    ## SM-2 Spaced Repetition
+
+    Reviews follow the [SuperMemo 2 algorithm](https://www.super-memory.com/english/ol/sm2.htm):
+
+    - Initial E-Factor: **2.5** (minimum 1.3)
+    - Intervals: **1 day** → **6 days** → `ceil(previous × EF)` for subsequent reviews
+    - E-Factor update on successful recall (q ≥ 3):
+      `EF' = EF + (0.1 − (5−q) × (0.08 + (5−q) × 0.02))`
+    - Failed recall (q < 3): reset to 1-day interval; E-Factor unchanged
+
+    **Not implemented:** SM-2 rule 7 (same-day re-review of items scored below 4).
+    The study UI uses a simplified rating scale (0, 2, 3, 4, 5).
+
+    ## Authentication
+
+    Protected endpoints require a valid Better Auth session cookie (`better-auth.session_token`).
+    Sign in via `/api/auth/sign-in/email` or Google OAuth (`/api/auth/sign-in/social`).
+
+    ## CSRF Protection
+
+    All mutating requests under `/api/v1` (except `/api/auth/*`) require a CSRF token:
+
+    1. `GET /api/v1/csrf-token` to obtain a token
+    2. Send it in the `x-csrf-token` header on `POST`, `PUT`, `PATCH`, and `DELETE`
+
+    ## Rate Limiting
+
+    Responses may include `Retry-After` when rate limited (`429`). Limits apply per route group
+    (general API, auth, uploads, word extraction).
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: '{baseUrl}'
+    description: Production
+    variables:
+      baseUrl:
+        default: https://example.com
+        description: Set via `BETTER_AUTH_URL` environment variable
+
+tags:
+  - name: auth
+    description: User registration, login, session, and password reset (Better Auth)
+  - name: security
+    description: CSRF token management
+  - name: documents
+    description: PDF upload, conversion, and vocabulary extraction
+  - name: words
+    description: Vocabulary word listing and lookup
+  - name: reviews
+    description: |
+      SM-2 spaced-repetition flashcard reviews.
+      Intervals use ceil (round up) per the original algorithm.
+  - name: game
+    description: User profile, achievements, and leaderboard
+  - name: minigames
+    description: Vocabulary minigames and XP rewards
+
+security:
+  - sessionCookie: []
+
+paths:
+  /api/v1/csrf-token:
+    get:
+      tags: [security]
+      operationId: csrf_token_get
+      summary: Get CSRF token
+      description: |
+        Returns a CSRF token for mutating API requests.
+        The token is also set in the `__preread_csrf` cookie.
+      security: []
+      responses:
+        '200':
+          description: CSRF token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfTokenResponse'
+              examples:
+                default:
+                  value:
+                    csrfToken: eyJhbGciOiJIUzI1NiJ9.example
+
+  /api/auth/get-session:
+    get:
+      tags: [auth]
+      operationId: auth_session_get
+      summary: Get current session
+      description: Returns the active session and user, or `null` if not authenticated.
+      security:
+        - sessionCookie: []
+        - {}
+      responses:
+        '200':
+          description: Session data or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SessionResponse'
+                  - type: 'null'
+
+  /api/auth/sign-up/email:
+    post:
+      tags: [auth]
+      operationId: auth_sign_up_email
+      summary: Register with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpEmailRequest'
+            examples:
+              default:
+                value:
+                  name: Jane Doe
+                  email: jane@example.com
+                  password: securePassword123
+                  rememberMe: true
+      responses:
+        '200':
+          description: User created and session established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/sign-in/email:
+    post:
+      tags: [auth]
+      operationId: auth_sign_in_email
+      summary: Sign in with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInEmailRequest'
+            examples:
+              default:
+                value:
+                  email: jane@example.com
+                  password: securePassword123
+                  rememberMe: true
+      responses:
+        '200':
+          description: Signed in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/sign-in/social:
+    post:
+      tags: [auth]
+      operationId: auth_sign_in_social
+      summary: Sign in with a social provider (Google)
+      description: |
+        Initiates OAuth flow. When `disableRedirect` is false (default), returns an authorization URL.
+        When `idToken` is provided, completes sign-in directly and returns a session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInSocialRequest'
+            examples:
+              google_redirect:
+                value:
+                  provider: google
+                  callbackURL: /upload
+                  disableRedirect: false
+      responses:
+        '200':
+          description: OAuth URL or session
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/OAuthRedirectResponse'
+                  - $ref: '#/components/schemas/AuthSessionResponse'
+        '404':
+          description: Provider not found or not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/sign-out:
+    post:
+      tags: [auth]
+      operationId: auth_sign_out
+      summary: Sign out
+      description: Deletes the current session and clears session cookies.
+      responses:
+        '200':
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success:
+                    type: boolean
+                    examples: [true]
+
+  /api/auth/request-password-reset:
+    post:
+      tags: [auth]
+      operationId: auth_request_password_reset
+      summary: Request password reset email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPasswordResetRequest'
+      responses:
+        '200':
+          description: Reset email sent (or silently ignored if email not found)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/auth/reset-password/{token}:
+    get:
+      tags: [auth]
+      operationId: auth_reset_password_callback
+      summary: Password reset callback
+      description: Validates the reset token and redirects to the callback URL with the token.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ResetToken'
+        - name: callbackURL
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri-reference
+          description: URL to redirect to after token validation
+      responses:
+        '302':
+          description: Redirect to callback URL with token or error query parameter
+
+  /api/auth/reset-password:
+    post:
+      tags: [auth]
+      operationId: auth_reset_password
+      summary: Reset password with token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/auth/callback/{provider}:
+    get:
+      tags: [auth]
+      operationId: auth_oauth_callback
+      summary: OAuth provider callback
+      description: Handles the OAuth redirect from providers such as Google. Not intended for direct API use.
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google]
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+        - name: error
+          in: query
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to application after OAuth completion
+
+  /api/v1/documents:
+    get:
+      tags: [documents]
+      operationId: documents_list
+      summary: List user documents
+      description: Returns all PDF documents for the authenticated user, ordered by creation date (newest first).
+      responses:
+        '200':
+          description: Document list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [documents]
+      operationId: documents_create
+      summary: Upload a PDF document
+      description: |
+        Uploads a PDF, extracts vocabulary words, and stores them as flashcards.
+        Maximum file size is 20 MB. Only `application/pdf` is accepted.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [pdf]
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+                  description: PDF file to upload
+      responses:
+        '201':
+          description: Document uploaded and converted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/documents/{id}:
+    get:
+      tags: [documents]
+      operationId: documents_get
+      summary: Get document by ID
+      parameters:
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [documents]
+      operationId: documents_delete
+      summary: Delete document
+      description: Deletes a document and all associated words and flashcards.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Document deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/words:
+    get:
+      tags: [words]
+      operationId: words_list
+      summary: List vocabulary words
+      description: |
+        Returns words from the user's documents, ordered alphabetically.
+      parameters:
+        - name: documentId
+          in: query
+          schema:
+            type: integer
+          description: Filter by document ID
+      responses:
+        '200':
+          description: Word list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/words/{id}:
+    get:
+      tags: [words]
+      operationId: words_get
+      summary: Get word by ID
+      parameters:
+        - $ref: '#/components/parameters/WordId'
+      responses:
+        '200':
+          description: Word details with flashcard state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/reviews/due:
+    get:
+      tags: [reviews]
+      operationId: reviews_due_list
+      summary: List due flashcards
+      description: |
+        Returns flashcards due for review today or earlier.
+        Default limit is 50.
+      parameters:
+        - name: documentId
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: Due cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DueCardsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reviews/stats:
+    get:
+      tags: [reviews]
+      operationId: reviews_stats_get
+      summary: Get review statistics
+      description: Returns total flashcard count and due-today count.
+      responses:
+        '200':
+          description: Review statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewStats'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reviews/{id}:
+    post:
+      tags: [reviews]
+      operationId: reviews_submit
+      summary: Submit flashcard review
+      description: |
+        Submits an SM-2 review for a flashcard.
+
+        **Quality scale (0–5):**
+        - 5 - perfect response
+        - 4 - correct after hesitation (E-Factor unchanged)
+        - 3 - correct with serious difficulty
+        - 2 - incorrect; correct answer seemed easy (resets interval)
+        - 1 - incorrect; correct answer remembered (resets interval)
+        - 0 - complete blackout (resets interval)
+
+        On q < 3 the card resets to a 1-day interval without changing the E-Factor.
+        On q ≥ 3 the next interval is computed via SM-2 (1 → 6 → ceil(prev × EF)).
+
+        Awards XP and may unlock achievements.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Flashcard ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSubmitRequest'
+            examples:
+              good_recall:
+                value:
+                  quality: 4
+              failed:
+                value:
+                  quality: 1
+      responses:
+        '200':
+          description: Review applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewSubmitResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+
+  /api/v1/game/profile:
+    get:
+      tags: [game]
+      operationId: game_profile_get
+      summary: Get user game profile
+      description: Returns user info, XP stats, and achievement summary.
+      responses:
+        '200':
+          description: Game profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameProfileResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/game/achievements:
+    get:
+      tags: [game]
+      operationId: game_achievements_list
+      summary: List achievements
+      description: Returns all achievements with unlock status for the current user.
+      responses:
+        '200':
+          description: Achievement list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Achievement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/game/leaderboard:
+    get:
+      tags: [game]
+      operationId: game_leaderboard_get
+      summary: Get XP leaderboard
+      description: Returns the top 10 users ranked by XP.
+      responses:
+        '200':
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/minigames/words:
+    get:
+      tags: [minigames]
+      operationId: minigames_words_list
+      summary: Get words for minigames
+      description: Returns a shuffled subset of the user's vocabulary for minigame sessions.
+      parameters:
+        - $ref: '#/components/parameters/CefrFilter'
+        - name: documentId
+          in: query
+          schema:
+            type: integer
+          description: Filter by document ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+      responses:
+        '200':
+          description: Game words
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameWordsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/minigames/complete:
+    post:
+      tags: [minigames]
+      operationId: minigames_complete
+      summary: Complete a minigame session
+      description: |
+        Awards XP based on score. Bonus XP for perfect score or ≥80% accuracy.
+        Valid `gameType` values: `fill`, `match`, `quiz`.
+      security:
+        - sessionCookie: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinigameCompleteRequest'
+            examples:
+              quiz_session:
+                value:
+                  correct: 8
+                  total: 10
+                  gameType: quiz
+      responses:
+        '200':
+          description: XP awarded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameCompleteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InvalidCsrf'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: Better Auth session cookie set after sign-in
+    csrfToken:
+      type: apiKey
+      in: header
+      name: x-csrf-token
+      description: CSRF token from `GET /api/v1/csrf-token` (required for mutating `/api/v1/*` requests except auth)
+
+  parameters:
+    DocumentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Document ID
+    WordId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Word ID
+    ResetToken:
+      name: token
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Password reset verification token
+    CefrFilter:
+      name: cefr
+      in: query
+      schema:
+        $ref: '#/components/schemas/CefrLevel'
+      description: Filter by CEFR level
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            default:
+              value:
+                error: Unauthorized
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InvalidCsrf:
+      description: Missing or invalid CSRF token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            default:
+              value:
+                error: Invalid CSRF token
+    PayloadTooLarge:
+      description: Request body or file exceeds size limit
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            default:
+              value:
+                error: File too large
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until the client may retry
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RateLimitError'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    RateLimitError:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+          enum: [RATE_LIMITED]
+        retryAfter:
+          type: [integer, 'null']
+          description: Seconds until retry (may be null)
+
+    CsrfTokenResponse:
+      type: object
+      required: [csrfToken]
+      properties:
+        csrfToken:
+          type: string
+
+    CefrLevel:
+      type: string
+      enum: [B1, B2, C1, C2]
+
+    User:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        image:
+          type: [string, 'null']
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Session:
+      type: object
+      required: [id, userId, expiresAt, token]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        token:
+          type: string
+        ipAddress:
+          type: [string, 'null']
+        userAgent:
+          type: [string, 'null']
+
+    SessionResponse:
+      type: object
+      required: [session, user]
+      properties:
+        session:
+          $ref: '#/components/schemas/Session'
+        user:
+          $ref: '#/components/schemas/User'
+
+    SignUpEmailRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+        image:
+          type: string
+          format: uri
+        callbackURL:
+          type: string
+        rememberMe:
+          type: boolean
+          default: true
+
+    SignInEmailRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        callbackURL:
+          type: string
+        rememberMe:
+          type: boolean
+          default: true
+
+    SignInSocialRequest:
+      type: object
+      required: [provider]
+      properties:
+        provider:
+          type: string
+          enum: [google]
+        callbackURL:
+          type: string
+        newUserCallbackURL:
+          type: string
+        errorCallbackURL:
+          type: string
+        disableRedirect:
+          type: boolean
+          default: false
+        requestSignUp:
+          type: boolean
+        scopes:
+          type: array
+          items:
+            type: string
+
+    AuthSessionResponse:
+      type: object
+      properties:
+        redirect:
+          type: boolean
+        token:
+          type: string
+          description: Session token
+        url:
+          type: [string, 'null']
+        user:
+          $ref: '#/components/schemas/User'
+
+    OAuthRedirectResponse:
+      type: object
+      required: [url, redirect]
+      properties:
+        url:
+          type: string
+          format: uri
+        redirect:
+          type: boolean
+
+    RequestPasswordResetRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        redirectTo:
+          type: string
+          description: URL to redirect after clicking the reset link
+
+    ResetPasswordRequest:
+      type: object
+      required: [newPassword]
+      properties:
+        newPassword:
+          type: string
+        token:
+          type: string
+          description: Reset token (can also be passed as query parameter)
+
+    PasswordResetStatusResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: boolean
+        message:
+          type: string
+
+    DocumentSummary:
+      type: object
+      required: [id, user_id, filename, created_at, word_count, processing_status]
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+        filename:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        word_count:
+          type: integer
+        processing_status:
+          type: string
+          enum: [processing, ready, failed]
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    Document:
+      type: object
+      required: [id, user_id, filename, created_at, processing_status]
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: string
+        filename:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        processing_status:
+          type: string
+          enum: [processing, ready, failed]
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    DocumentUploadResponse:
+      type: object
+      required: [id, filename, processing_status, message]
+      properties:
+        id:
+          type: integer
+        filename:
+          type: string
+        processing_status:
+          type: string
+          enum: [processing]
+        message:
+          type: string
+
+    ExtractWordsRequest:
+      type: object
+      properties:
+        minCefr:
+          $ref: '#/components/schemas/CefrLevel'
+          description: Only extract words at or above this CEFR level
+
+    ExtractedWord:
+      type: object
+      required: [id, word, definition, cefr]
+      properties:
+        id:
+          type: integer
+        word:
+          type: string
+        definition:
+          type: string
+        cefr:
+          $ref: '#/components/schemas/CefrLevel'
+        context:
+          type: [string, 'null']
+        translation:
+          type: [string, 'null']
+
+    ExtractWordsResponse:
+      type: object
+      required: [documentId, extracted, inserted, words]
+      properties:
+        documentId:
+          type: integer
+        extracted:
+          type: integer
+          description: Total words returned by the extraction service
+        inserted:
+          type: integer
+          description: New words actually saved (duplicates skipped)
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedWord'
+
+    WordSummary:
+      type: object
+      required: [id, document_id, word, definition, cefr, filename]
+      properties:
+        id:
+          type: integer
+        document_id:
+          type: integer
+        word:
+          type: string
+        definition:
+          type: string
+        cefr:
+          $ref: '#/components/schemas/CefrLevel'
+        context:
+          type: [string, 'null']
+        translation:
+          type: [string, 'null']
+        filename:
+          type: string
+        flashcard_id:
+          type: [integer, 'null']
+        next_review:
+          type: [string, 'null']
+          format: date
+        repetitions:
+          type: [integer, 'null']
+        interval:
+          type: [integer, 'null']
+
+    WordDetail:
+      allOf:
+        - $ref: '#/components/schemas/WordSummary'
+        - type: object
+          properties:
+            ease_factor:
+              type: [number, 'null']
+
+    WordListResponse:
+      type: object
+      required: [words, total]
+      properties:
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/WordSummary'
+        total:
+          type: integer
+
+    DueCard:
+      type: object
+      required:
+        - flashcard_id
+        - ease_factor
+        - interval
+        - repetitions
+        - next_review
+        - word_id
+        - word
+        - definition
+        - cefr
+        - document_id
+        - filename
+      properties:
+        flashcard_id:
+          type: integer
+        ease_factor:
+          type: number
+        interval:
+          type: integer
+        repetitions:
+          type: integer
+        next_review:
+          type: string
+          format: date
+        last_reviewed:
+          type: [string, 'null']
+          format: date
+        word_id:
+          type: integer
+        word:
+          type: string
+        definition:
+          type: string
+        cefr:
+          $ref: '#/components/schemas/CefrLevel'
+        context:
+          type: [string, 'null']
+        translation:
+          type: [string, 'null']
+        document_id:
+          type: integer
+        filename:
+          type: string
+
+    DueCardsResponse:
+      type: object
+      required: [count, cards]
+      properties:
+        count:
+          type: integer
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/DueCard'
+
+    CefrReviewStats:
+      type: object
+      required: [cefr, total, due]
+      properties:
+        cefr:
+          $ref: '#/components/schemas/CefrLevel'
+        total:
+          type: integer
+        due:
+          type: integer
+
+    ReviewStats:
+      type: object
+      required: [total, dueToday]
+      properties:
+        total:
+          type: integer
+        dueToday:
+          type: integer
+
+    ReviewSubmitRequest:
+      type: object
+      required: [quality]
+      properties:
+        quality:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: |
+            SM-2 recall quality (0 = blackout, 5 = perfect).
+            Values below 3 reset the card; 4 leaves E-Factor unchanged.
+            The study UI offers a simplified subset: 0, 2, 3, 4, 5.
+
+    ReviewSubmitResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        wordId:
+          type: integer
+        ease_factor:
+          type: number
+        interval:
+          type: integer
+        repetitions:
+          type: integer
+        next_review:
+          type: string
+          format: date
+        last_reviewed:
+          type: string
+          format: date
+        quality:
+          type: integer
+        game:
+          $ref: '#/components/schemas/ReviewGameResult'
+
+    ReviewGameResult:
+      type: object
+      properties:
+        xpGained:
+          type: integer
+        totalXp:
+          type: integer
+        level:
+          type: integer
+        leveledUp:
+          type: boolean
+        currentStreak:
+          type: integer
+        newAchievements:
+          type: array
+          items:
+            $ref: '#/components/schemas/AchievementUnlocked'
+
+    UserStats:
+      type: object
+      required:
+        - user_id
+        - xp
+        - level
+        - current_streak
+        - longest_streak
+        - total_reviews
+        - mastered_words
+        - perfect_streak
+        - daily_reviews_today
+        - progressXp
+        - neededXp
+        - progressPercent
+        - nextLevelXp
+      properties:
+        user_id:
+          type: string
+        xp:
+          type: integer
+        level:
+          type: integer
+        current_streak:
+          type: integer
+        longest_streak:
+          type: integer
+        last_study_date:
+          type: [string, 'null']
+          format: date
+        total_reviews:
+          type: integer
+        mastered_words:
+          type: integer
+        perfect_streak:
+          type: integer
+        daily_reviews_today:
+          type: integer
+        daily_reviews_date:
+          type: [string, 'null']
+          format: date
+        progressXp:
+          type: integer
+        neededXp:
+          type: integer
+        progressPercent:
+          type: integer
+        nextLevelXp:
+          type: integer
+
+    AchievementRequirementType:
+      type: string
+      enum:
+        - documents
+        - reviews
+        - streak
+        - mastered
+        - level
+        - perfect_streak
+        - daily_reviews
+        - cefr_master
+
+    Achievement:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - description
+        - icon
+        - xp_reward
+        - requirement_type
+        - requirement_value
+        - unlocked
+        - unlocked_at
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        xp_reward:
+          type: integer
+        requirement_type:
+          $ref: '#/components/schemas/AchievementRequirementType'
+        requirement_value:
+          type: integer
+        unlocked:
+          type: integer
+          enum: [0, 1]
+        unlocked_at:
+          type: [string, 'null']
+          format: date-time
+
+    AchievementUnlocked:
+      type: object
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        xpReward:
+          type: integer
+
+    GameProfileResponse:
+      type: object
+      required: [user, stats, achievements]
+      properties:
+        user:
+          type: object
+          required: [id, name, email]
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        stats:
+          $ref: '#/components/schemas/UserStats'
+        achievements:
+          type: object
+          required: [total, unlocked, list]
+          properties:
+            total:
+              type: integer
+            unlocked:
+              type: integer
+            list:
+              type: array
+              items:
+                $ref: '#/components/schemas/Achievement'
+
+    LeaderboardEntry:
+      type: object
+      required:
+        - user_id
+        - xp
+        - level
+        - current_streak
+        - mastered_words
+        - achievement_count
+      properties:
+        user_id:
+          type: string
+        xp:
+          type: integer
+        level:
+          type: integer
+        current_streak:
+          type: integer
+        mastered_words:
+          type: integer
+        achievement_count:
+          type: integer
+
+    MinigameWord:
+      type: object
+      required: [id, word, definition, cefr]
+      properties:
+        id:
+          type: integer
+        word:
+          type: string
+        definition:
+          type: string
+        translation:
+          type: [string, 'null']
+        context:
+          type: [string, 'null']
+        cefr:
+          $ref: '#/components/schemas/CefrLevel'
+
+    MinigameWordsResponse:
+      type: object
+      required: [words, total]
+      properties:
+        words:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinigameWord'
+        total:
+          type: integer
+
+    MinigameType:
+      type: string
+      enum: [fill, match, quiz]
+      description: |
+        - `fill` - complete the missing word in a sentence
+        - `match` - match words to definitions
+        - `quiz` - multiple choice
+
+    MinigameCompleteRequest:
+      type: object
+      required: [correct, total, gameType]
+      properties:
+        correct:
+          type: number
+          minimum: 0
+        total:
+          type: number
+          minimum: 1
+        gameType:
+          $ref: '#/components/schemas/MinigameType'
+
+    MinigameCompleteResponse:
+      type: object
+      properties:
+        xpGained:
+          type: integer
+        totalXp:
+          type: integer
+        level:
+          type: integer
+        leveledUp:
+          type: boolean
+        newAchievements:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              icon:
+                type: string
+        gameType:
+          $ref: '#/components/schemas/MinigameType'

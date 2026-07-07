@@ -1,0 +1,15 @@
+{
+  "plugins": ["prettier-plugin-ejs"],
+  "tabWidth": 2,
+  "printWidth": 100,
+  "endOfLine": "lf",
+  "overrides": [
+    {
+      "files": "*.ejs",
+      "options": {
+        "parser": "html",
+        "htmlWhitespaceSensitivity": "css"
+      }
+    }
+  ]
+}

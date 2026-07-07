@@ -1,0 +1,181 @@
+@media (max-width: 768px) {
+  .app-nav {
+    padding: 0 1rem;
+  }
+
+  .app-nav .navbar-collapse {
+    border-top: 1px solid var(--border);
+    padding: 0.25rem 0 1rem;
+  }
+
+  .app-nav-links .nav-link {
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+  }
+
+  .nav-logout {
+    margin-top: 0.75rem;
+    padding: 0.85rem 1rem;
+    text-align: center;
+    width: 100%;
+    border: 1px solid color-mix(in srgb, var(--error) 50%, transparent);
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  [data-theme="dark"] .app-nav .navbar-collapse {
+    border-top-color: var(--nav-divider);
+    background: var(--nav-elevated);
+  }
+
+  [data-theme="dark"] .app-nav-links .nav-link {
+    border-bottom-color: var(--nav-divider);
+  }
+
+  [data-theme="dark"] .app-nav-links .nav-link.active {
+    box-shadow: inset 3px 0 0 var(--primary);
+  }
+
+  main.container,
+  .app-container {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .subtitle,
+  .flashcard-context,
+  .stitch-hero-copy p {
+    overflow-wrap: anywhere;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .file-picker {
+    padding: 1rem;
+    border: 2px dashed var(--border);
+    background: var(--surface-2);
+  }
+
+  .file-input-wrap {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .file-input-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .file-input-wrap .file-name {
+    width: 100%;
+    text-align: right;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .upload-actions .select-field {
+    width: 100%;
+  }
+
+  .upload-actions .upload-submit-btn {
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .doc-item {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .doc-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .doc-actions .btn:not(.btn-icon) {
+    flex: 1 1 auto;
+  }
+
+  .btn-lg {
+    width: 100%;
+    text-align: center;
+  }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-group.inline {
+    display: block;
+    margin-left: 0;
+    margin-bottom: 0.75rem;
+  }
+
+  .form-label-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .auth-forgot-link {
+    white-space: normal;
+  }
+
+  .table-wrap {
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .table-wrap .table {
+    min-width: 440px;
+  }
+
+  .context {
+    min-width: 150px;
+    white-space: normal;
+  }
+
+  .achievement-item {
+    flex-wrap: wrap;
+  }
+
+  .achievement-date {
+    width: 100%;
+    padding-right: 3.5rem;
+  }
+
+  .rate-buttons {
+    gap: 0.35rem;
+  }
+
+  .rate-btn {
+    min-width: 56px;
+    font-size: 0.85rem;
+    padding: 0.65rem 0.35rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .nav-logo {
+    height: 32px;
+  }
+
+  .app-nav {
+    padding: 0 0.75rem;
+  }
+
+  .table-wrap .table {
+    min-width: 380px;
+  }
+}

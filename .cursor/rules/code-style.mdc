@@ -1,0 +1,26 @@
+---
+description: Code formatting and style conventions for consistent output
+alwaysApply: true
+---
+
+# Code Style
+
+This project uses **Biome** for JS/CSS/JSON and **Prettier** (with `prettier-plugin-ejs`) for EJS views.
+
+## Commands
+
+- `npm run check` — verify format + lint (Biome + EJS)
+- `npm run fix` — auto-fix and format everything
+
+## Conventions
+
+- Single quotes, semicolons, 2-space indent, 100 char lines (Biome for JS)
+- ESM (`import`/`export`) in `src/` and `test/`
+- Path aliases: `#*` → `./src/*`
+- Shared browser JS: `public/js/shared/*.js`
+- Page JS: `public/js/pages/<page>.js`
+- Views: `src/views/**/*.ejs` (formatted by Prettier)
+
+## After changes
+
+Run `npm run fix` before finishing.
