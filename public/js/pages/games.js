@@ -18,8 +18,8 @@
   let matchSelected = null;
   let matchSolved = new Set();
 
-  const cefrFilter = document.getElementById('cefrFilter');
-  const docFilter = document.getElementById('docFilter');
+  const params = new URLSearchParams(window.location.search);
+  const documentId = params.get('documentId') || '';
   const gamePicker = document.getElementById('gamePicker');
   const gameArea = document.getElementById('gameArea');
   const gameTitle = document.getElementById('gameTitle');
@@ -63,25 +63,9 @@
     setTimeout(() => xpToast.classList.add('hidden'), 2800);
   }
 
-  async function loadDocuments() {
-    const res = await apiFetch('/api/v1/documents');
-    if (isRateLimited(res)) return;
-    const docs = await res.json();
-    docFilter.innerHTML =
-      '<option value="">הכל</option>' +
-      docs
-        .filter((d) => d.processing_status === 'ready')
-        .map((d) => {
-          const short = truncateFilename(d.filename, 28);
-          return `<option value="${d.id}" title="${escapeHtml(d.filename)}">${escapeHtml(short)}</option>`;
-        })
-        .join('');
-  }
-
   async function loadWords() {
     const query = new URLSearchParams();
-    if (cefrFilter.value) query.set('cefr', cefrFilter.value);
-    if (docFilter.value) query.set('documentId', docFilter.value);
+    if (documentId) query.set('documentId', documentId);
     query.set('limit', '30');
 
     const res = await apiFetch(`/api/v1/minigames/words?${query.toString()}`);
@@ -118,7 +102,7 @@
     }
     return {
       text: `הגדרה: ${word.definition}`,
-      hint: word.translation ? `תרגום: ${word.translation}` : `רמת ${word.cefr}`,
+      hint: word.translation ? `תרגום: ${word.translation}` : '',
       answer: word.word,
       noContext: true,
     };
@@ -362,7 +346,6 @@
               (o) => `
             <button class="quiz-option" data-id="${o.id}" data-correct="${o.id === w.id}" type="button">
               ${escapeHtml(o.word)}
-              <span class="cefr-badge cefr-${escapeHtml(o.cefr)}">${escapeHtml(o.cefr)}</span>
             </button>
           `,
             )
@@ -421,13 +404,5 @@
     document.getElementById('backPicker').onclick = backToPicker;
   }
 
-  cefrFilter.addEventListener('change', () => {
-    if (currentGame) startGame(currentGame);
-  });
-
-  docFilter.addEventListener('change', () => {
-    if (currentGame) startGame(currentGame);
-  });
-
-  loadDocuments().then(renderPicker);
+  renderPicker();
 })();
