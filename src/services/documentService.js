@@ -152,10 +152,9 @@ export async function listDocuments(userId) {
 export async function getDocument(userId, id) {
   const doc = await prisma.document.findFirst({
     where: { id, userId },
-    include: { _count: { select: { words: true } } },
   });
   if (!doc) return null;
-  return mapDocument(doc, doc._count.words);
+  return mapDocument(doc);
 }
 
 export async function createDocument(userId, file, minCefr) {

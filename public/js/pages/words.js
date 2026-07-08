@@ -3,29 +3,17 @@
   const documentId = params.get('documentId') || '';
   const wordsTable = document.getElementById('wordsTable');
   const studyLink = document.getElementById('studyLink');
-  const printCardsLink = document.getElementById('printCardsLink');
-  const wordsSummary = document.getElementById('wordsSummary');
-  const wordsToolbar = document.getElementById('wordsToolbar');
   const printMode = params.get('printCards') === '1';
 
   if (printMode) {
     document.body.classList.add('print-preview');
-    wordsToolbar?.classList.add('d-none');
-    document.querySelector('.words-page-header')?.classList.add('d-none');
+    document.querySelector('.filters')?.classList.add('d-none');
   }
 
   function updateStudyLink() {
     const query = new URLSearchParams();
     if (documentId) query.set('documentId', documentId);
     studyLink.href = `/study${query.toString() ? `?${query.toString()}` : ''}`;
-  }
-
-  function updatePrintLink() {
-    if (!printCardsLink) return;
-    const query = new URLSearchParams();
-    if (documentId) query.set('documentId', documentId);
-    query.set('printCards', '1');
-    printCardsLink.href = `/words?${query.toString()}`;
   }
 
   function escapeCell(text) {
@@ -140,33 +128,6 @@
     }
   }
 
-  function renderEmptyState(messageHtml) {
-    return `
-      <div class="words-empty">
-        <div class="words-empty-icon" aria-hidden="true">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            <path d="M8 7h8"/>
-            <path d="M8 11h6"/>
-          </svg>
-        </div>
-        <p class="words-empty-text mb-0">${messageHtml}</p>
-      </div>
-    `;
-  }
-
-  function formatNextReview(value) {
-    if (!value) return '<span class="text-muted">—</span>';
-    return `<time datetime="${escapeHtml(String(value))}">${escapeCell(value)}</time>`;
-  }
-
-  function setSummary(count) {
-    if (!wordsSummary) return;
-    wordsSummary.hidden = false;
-    wordsSummary.textContent = count === 1 ? 'מילה אחת' : `${count} מילים`;
-  }
-
   async function loadWords() {
     const query = new URLSearchParams();
     if (documentId) query.set('documentId', documentId);
@@ -178,15 +139,12 @@
     }
     const data = await res.json();
     updateStudyLink();
-    updatePrintLink();
 
     if (data.words.length === 0) {
-      if (printCardsLink) printCardsLink.hidden = true;
-      if (wordsSummary) wordsSummary.hidden = true;
       const emptyMessage = documentId
         ? 'לא נמצאו מילים במסמך הזה. נסה להעלות מסמך אחר או לשנות את רמת ה-CEFR.'
-        : 'אין מילים עדיין. <a class="words-empty-link" href="/upload">העלה PDF</a> כדי להתחיל.';
-      wordsTable.innerHTML = renderEmptyState(emptyMessage);
+        : 'אין מילים. <a href="/upload">העלה PDF</a> כדי להתחיל.';
+      wordsTable.innerHTML = `<p class="text-muted mb-0">${emptyMessage}</p>`;
       return;
     }
 
@@ -195,19 +153,16 @@
       return;
     }
 
-    if (printCardsLink) printCardsLink.hidden = false;
-    setSummary(data.words.length);
-
     wordsTable.innerHTML = `
-      <table class="table table-sm table-hover align-middle mb-0 words-table">
+      <table class="table table-sm table-hover align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th scope="col">מילה</th>
-            <th scope="col" class="words-col-secondary">רמה</th>
-            <th scope="col" class="words-col-secondary">הגדרה</th>
-            <th scope="col" class="words-col-secondary">תרגום</th>
-            <th scope="col" class="words-col-secondary">הקשר</th>
-            <th scope="col">חזרה הבאה</th>
+            <th>מילה</th>
+            <th>רמה</th>
+            <th>הגדרה</th>
+            <th>תרגום</th>
+            <th>הקשר</th>
+            <th>חזרה הבאה</th>
           </tr>
         </thead>
         <tbody>
@@ -215,16 +170,16 @@
             .map(
               (w) => `
             <tr>
-              <td class="words-cell-word"><strong>${escapeCell(w.word)}</strong></td>
-              <td class="words-col-secondary">${
+              <td><strong>${escapeCell(w.word)}</strong></td>
+              <td>${
                 w.cefr
                   ? `<span class="cefr-badge cefr-${escapeHtml(w.cefr)}">${escapeCell(w.cefr)}</span>`
-                  : '<span class="text-muted">—</span>'
+                  : '-'
               }</td>
-              <td class="words-cell-def words-col-secondary">${escapeCell(w.definition)}</td>
-              <td class="words-cell-translation words-col-secondary">${escapeCell(w.translation)}</td>
-              <td class="context small text-muted words-col-secondary">${escapeCell(w.context)}</td>
-              <td class="words-cell-review small">${formatNextReview(w.next_review)}</td>
+              <td>${escapeCell(w.definition)}</td>
+              <td>${escapeCell(w.translation)}</td>
+              <td class="context small text-muted">${escapeCell(w.context)}</td>
+              <td>${w.next_review || '-'}</td>
             </tr>
           `,
             )

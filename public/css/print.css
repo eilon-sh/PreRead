@@ -80,9 +80,6 @@
   .app-nav,
   .subtitle,
   .filters,
-  .words-page-header,
-  .words-toolbar,
-  .words-summary,
   .words-summary.no-print,
   .no-print {
     display: none !important;
