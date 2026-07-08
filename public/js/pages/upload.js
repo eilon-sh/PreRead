@@ -6,10 +6,9 @@
   const localUploadingDocs = new Map();
   let documentsPollTimer = null;
   let cachedDocuments = [];
-  let focusedProcessingDocId = null;
-  const POLL_INITIAL_MS = 8000;
-  const POLL_MAX_MS = 30000;
-  const POLL_BACKOFF_FACTOR = 1.5;
+  const POLL_INITIAL_MS = 5000;
+  const POLL_MAX_MS = 15000;
+  const POLL_BACKOFF_FACTOR = 1.4;
   let pollDelayMs = POLL_INITIAL_MS;
 
   function hasProcessingDocs(docs = cachedDocuments) {
@@ -23,28 +22,6 @@
     }
   }
 
-  function getFocusedProcessingDocId(docs = cachedDocuments) {
-    if (focusedProcessingDocId) {
-      const focusedDoc = docs.find((doc) => doc.id === focusedProcessingDocId);
-      if (focusedDoc?.processing_status === 'processing') {
-        return focusedProcessingDocId;
-      }
-      focusedProcessingDocId = null;
-    }
-
-    return docs.find((doc) => doc.processing_status === 'processing')?.id ?? null;
-  }
-
-  function mergeDocumentUpdate(updatedDoc) {
-    const index = cachedDocuments.findIndex((doc) => doc.id === updatedDoc.id);
-    if (index === -1) {
-      cachedDocuments = [updatedDoc, ...cachedDocuments];
-      return;
-    }
-
-    cachedDocuments[index] = { ...cachedDocuments[index], ...updatedDoc };
-  }
-
   function scheduleDocumentsPoll() {
     clearDocumentsPolling();
     if (document.hidden || !hasProcessingDocs()) return;
@@ -54,7 +31,7 @@
       const previousDelay = pollDelayMs;
 
       try {
-        await loadFocusedDocument();
+        await loadDocuments();
       } catch {
         // keep polling on transient failures
       }
@@ -90,7 +67,7 @@
     if (!hasProcessingDocs()) return;
 
     pollDelayMs = POLL_INITIAL_MS;
-    loadFocusedDocument().catch(() => {});
+    loadDocuments().catch(() => {});
   });
 
   window.addEventListener('pagehide', clearDocumentsPolling);
@@ -135,55 +112,40 @@
         const hasNoWords = isReady && (d.word_count || 0) === 0;
         const canDelete = status !== 'processing' && !String(d.id).startsWith('local-');
         const canOpenWords = isReady && !hasNoWords;
-        const isProcessing = status === 'processing' || status === 'uploading';
-
-        const docNameHtml = canOpenWords
-          ? `<a class="doc-name d-block" href="/words?documentId=${d.id}" title="${escapeHtml(d.filename)}">${escapeHtml(d.filename)}</a>`
-          : `<strong class="doc-name d-block" title="${escapeHtml(d.filename)}">${escapeHtml(d.filename)}</strong>`;
-
-        const gamesBtnHtml = canOpenWords
-          ? `<a href="/games?documentId=${d.id}" class="btn btn-sm btn-outline-primary doc-action-btn" title="התחל משחק" aria-label="התחל משחק">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                 <line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/>
-                 <line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/>
-                 <rect x="2" y="6" width="20" height="12" rx="2"/>
-               </svg>
-               <span>התחל משחק</span>
-             </a>`
-          : '';
-
-        const statusNoteHtml = hasNoWords
-          ? '<span class="text-muted small">לא נמצאו מילים</span>'
-          : isProcessing
-            ? '<span class="text-muted small">העיבוד עדיין רץ...</span>'
-            : '';
-
-        const deleteBtnHtml = canDelete
-          ? `<button type="button" class="btn btn-sm btn-outline-danger doc-action-btn js-delete-doc" data-doc-id="${d.id}" title="מחק" aria-label="מחק">
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                 <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-               </svg>
-               <span>מחק</span>
-             </button>`
-          : '';
 
         return `
-      <article class="doc-card border rounded p-3" data-doc-id="${d.id}">
-        <div class="doc-card-header d-flex align-items-start justify-content-between gap-2">
-          <div class="doc-info flex-grow-1" style="min-width:0">
-            ${docNameHtml}
-            <div class="doc-meta d-flex flex-wrap gap-2 mt-2">
-              <span class="${getStatusBadgeClass(status)}">${getDocumentStatusLabel(status)}</span>
-              <span class="badge text-bg-secondary">${d.word_count || 0} מילים</span>
-              ${statusNoteHtml}
-            </div>
-          </div>
-          <div class="doc-header-actions d-flex align-items-center gap-2">
-            ${gamesBtnHtml}
-            ${deleteBtnHtml}
-          </div>
+      <div class="doc-item d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 border rounded">
+        <div class="doc-info flex-grow-1" style="min-width:0">
+          <strong class="doc-name d-block text-truncate" title="${escapeHtml(d.filename)}">${escapeHtml(truncateFilename(d.filename))}</strong>
+          <span class="${getStatusBadgeClass(status)}">${getDocumentStatusLabel(status)}</span>
+          <span class="badge text-bg-secondary">${d.word_count || 0} מילים</span>
         </div>
-      </article>
+        <div class="doc-actions d-flex flex-wrap gap-2">
+          ${
+            hasNoWords
+              ? '<span class="text-muted small">לא נמצאו מילים</span>'
+              : canOpenWords
+                ? `<a href="/words?documentId=${d.id}" class="btn btn-sm btn-outline-primary">צפה במילים</a>
+               <a href="/words?documentId=${d.id}&printCards=1" class="btn btn-sm btn-outline-secondary btn-icon" title="הדפס כרטיסיות" aria-label="הדפס כרטיסיות">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+                 </svg>
+               </a>`
+                : status === 'processing' || status === 'uploading'
+                  ? '<span class="text-muted small">העיבוד עדיין רץ...</span>'
+                  : ''
+          }
+          ${
+            canDelete
+              ? `<button type="button" class="btn btn-sm btn-outline-danger btn-icon js-delete-doc" data-doc-id="${d.id}" title="מחק" aria-label="מחק">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                 </svg>
+               </button>`
+              : ''
+          }
+        </div>
+      </div>
     `;
       })
       .join('');
@@ -195,7 +157,7 @@
 
     const docId = deleteBtn.dataset.docId;
     const docName =
-      deleteBtn.closest('.doc-card')?.querySelector('.doc-name')?.textContent?.trim() || 'המסמך';
+      deleteBtn.closest('.doc-item')?.querySelector('.doc-name')?.textContent?.trim() || 'המסמך';
     const shouldDelete = confirm(`למחוק את "${docName}"?`);
     if (!shouldDelete) return;
 
@@ -206,9 +168,6 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'מחיקת המסמך נכשלה');
-      if (Number(docId) === focusedProcessingDocId) {
-        focusedProcessingDocId = null;
-      }
       showStatusAlert(`המסמך ${truncateFilename(docName, 30)} נמחק`, 'success');
       await loadDocuments();
     } catch (err) {
@@ -228,25 +187,6 @@
     cachedDocuments = docs;
     renderDocuments(docs);
     refreshDocumentsPolling(docs);
-  }
-
-  async function loadFocusedDocument() {
-    const focusedDocId = getFocusedProcessingDocId();
-    if (!focusedDocId) {
-      refreshDocumentsPolling(cachedDocuments);
-      return;
-    }
-
-    const res = await apiFetch(`/api/v1/documents/${focusedDocId}`);
-    if (!res.ok) {
-      await loadDocuments();
-      return;
-    }
-
-    const doc = await res.json();
-    mergeDocumentUpdate(doc);
-    renderDocuments(cachedDocuments);
-    refreshDocumentsPolling(cachedDocuments);
   }
 
   uploadForm.addEventListener('submit', async (e) => {
@@ -292,9 +232,8 @@
       fileNameEl.textContent = 'לא נבחר קובץ';
       fileNameEl.title = '';
       localUploadingDocs.delete(localId);
-      focusedProcessingDocId = uploadData.id;
       pollDelayMs = POLL_INITIAL_MS;
-      await loadDocuments();
+      loadDocuments();
     } catch (err) {
       localUploadingDocs.delete(localId);
       renderDocuments(cachedDocuments);

@@ -815,160 +815,9 @@
   text-align: center;
   padding: 1.5rem 1rem;
 }
-.words-page-header {
-  margin-bottom: 1.25rem;
-}
-
-.words-page-header .subtitle {
-  margin-bottom: 0;
-}
-
-.words-card .card-body {
-  padding: 1.25rem 1.25rem 1rem;
-}
-
-.words-toolbar {
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0.65rem;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.words-toolbar-primary,
-.words-toolbar-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 44px;
-}
-
 .words-summary {
-  margin: 0;
-  margin-inline-start: auto;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface-2));
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.words-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.85rem;
-  padding: 2.5rem 1rem;
-  text-align: center;
-}
-
-.words-loading-bar {
-  width: min(220px, 70%);
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 18%, var(--surface-2));
-  overflow: hidden;
-  position: relative;
-}
-
-.words-loading-bar::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 40%;
-  border-radius: inherit;
-  background: var(--primary);
-  animation: words-loading-slide 1.1s ease-in-out infinite;
-}
-
-@keyframes words-loading-slide {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(280%);
-  }
-}
-
-.words-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.85rem;
-  padding: 2.75rem 1.25rem;
-}
-
-.words-empty-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, var(--surface-2));
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-}
-
-.words-empty-text {
-  max-width: 28rem;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.words-empty-link {
-  font-weight: 700;
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.words-empty-link:hover,
-.words-empty-link:focus-visible {
-  color: var(--primary-hover);
-  text-decoration: underline;
-}
-
-.words-table {
-  --bs-table-hover-bg: color-mix(in srgb, var(--primary) 6%, var(--surface-2));
-}
-
-.words-table thead th {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--muted);
-  white-space: nowrap;
-  border-bottom-width: 1px;
-  padding-block: 0.7rem;
-}
-
-.words-table tbody td {
-  padding-block: 0.8rem;
-  vertical-align: middle;
-  border-color: color-mix(in srgb, var(--border) 85%, transparent);
-}
-
-.words-cell-word {
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.words-cell-def,
-.words-cell-translation {
-  max-width: 220px;
-  overflow-wrap: anywhere;
-}
-
-.words-cell-review {
-  white-space: nowrap;
-  color: var(--muted);
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
 }
 
 .documents-list {
@@ -981,63 +830,33 @@
   gap: 0.75rem;
 }
 
-.doc-card {
-  background: var(--surface);
-  border-color: var(--border) !important;
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.doc-card:hover {
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
-  box-shadow: var(--shadow);
-}
-
-.doc-card-header {
-  min-height: 44px;
-}
-
 .doc-info {
   min-width: 0;
   flex: 1;
 }
 
-.doc-meta {
-  align-items: center;
-}
-
 .doc-name {
   max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: normal;
-  font-weight: 700;
-  color: var(--text);
-  text-decoration: none;
-  line-height: 1.35;
-}
-
-a.doc-name {
-  color: var(--primary);
-}
-
-a.doc-name:hover,
-a.doc-name:focus {
-  color: var(--primary-hover);
-  text-decoration: underline;
-}
-
-.doc-header-actions {
-  flex-shrink: 0;
-}
-
-.doc-action-btn {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.doc-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.doc-actions .btn:not(.btn-icon) {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
+}
+
+.doc-actions .btn-icon {
+  flex: 0 0 auto;
 }
 
 .table-wrap {
@@ -1058,17 +877,11 @@ a.doc-name:focus {
 }
 
 .cefr-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.2;
-  text-align: center;
 }
 
 .cefr-B1 {
@@ -1352,22 +1165,18 @@ a.doc-name:focus {
     text-align: center;
   }
 
-  .doc-card-header {
+  .doc-item {
     flex-direction: column;
     align-items: stretch !important;
   }
 
-  .doc-header-actions {
+  .doc-actions {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+    justify-content: flex-end;
   }
 
-  .doc-header-actions .doc-action-btn {
-    width: 100%;
-    justify-content: center;
+  .doc-actions .btn:not(.btn-icon) {
+    flex: 1 1 auto;
   }
 
   .btn-lg {
@@ -1378,45 +1187,6 @@ a.doc-name:focus {
   .filters {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .words-toolbar {
-    align-items: stretch;
-  }
-
-  .words-summary {
-    margin-inline-start: 0;
-    text-align: center;
-  }
-
-  .words-toolbar-primary,
-  .words-toolbar-secondary {
-    width: 100%;
-  }
-
-  .words-table .words-col-secondary {
-    display: none;
-  }
-
-  .words-table {
-    min-width: 0 !important;
-  }
-
-  .table-wrap .words-table {
-    min-width: 0;
-  }
-
-  .words-cell-word {
-    white-space: normal;
-  }
-
-  .words-cell-def {
-    max-width: none;
-  }
-
-  .words-cell-review {
-    white-space: normal;
-    text-align: start;
   }
 
   .form-group.inline {
@@ -1465,18 +1235,6 @@ a.doc-name:focus {
     min-width: 56px;
     font-size: 0.85rem;
     padding: 0.65rem 0.35rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .doc-card {
-    transition: none;
-  }
-
-  .words-loading-bar::after {
-    animation: none;
-    width: 100%;
-    opacity: 0.55;
   }
 }
 

@@ -45,20 +45,7 @@
 }
 
 [data-theme="dark"] .table-hover > tbody > tr:hover > * {
-  --bs-table-bg-state: color-mix(in srgb, var(--primary) 18%, var(--surface-3));
-  color: var(--text);
-  box-shadow: inset 3px 0 0 var(--primary);
-}
-
-[data-theme="dark"] .words-table {
-  --bs-table-hover-bg: color-mix(in srgb, var(--primary) 22%, var(--surface-3));
-  --bs-table-hover-color: var(--text);
-}
-
-[data-theme="dark"] .words-table.table-hover > tbody > tr:hover > * {
-  --bs-table-bg-state: color-mix(in srgb, var(--primary) 22%, var(--surface-3));
-  background-color: color-mix(in srgb, var(--primary) 22%, var(--surface-3)) !important;
-  color: var(--text);
+  --bs-table-bg-state: var(--surface-3);
   box-shadow: inset 3px 0 0 var(--primary);
 }
 
@@ -110,24 +97,6 @@
 
 [data-theme="dark"] .landing-cta {
   color: var(--on-primary);
-}
-
-[data-theme="dark"] .words-toolbar {
-  border-bottom-color: var(--border-strong);
-}
-
-[data-theme="dark"] .words-summary {
-  background: color-mix(in srgb, var(--primary) 16%, var(--surface-3));
-  color: var(--text);
-}
-
-[data-theme="dark"] .words-empty-icon {
-  background: color-mix(in srgb, var(--primary) 16%, var(--surface-3));
-  border-color: color-mix(in srgb, var(--primary) 35%, var(--border-strong));
-}
-
-[data-theme="dark"] .words-table thead th {
-  color: var(--muted);
 }
 
 [data-theme="dark"] .cefr-B1 {
