@@ -19,14 +19,12 @@
 		"db:studio": "prisma studio",
 		"postinstall": "prisma generate",
 		"test": "node test/e2e.js",
-		"test:unit": "node test/parseIntUtils.test.js && node test/textSplitter.test.js && node test/bedrockExtraction.test.js",
+		"test:unit": "node test/parseIntUtils.test.js",
 		"check": "biome check . && prettier --check \"src/views/**/*.ejs\"",
 		"fix": "biome check --write . && prettier --write \"src/views/**/*.ejs\""
 	},
 	"dependencies": {
-		"@aws/bedrock-token-generator": "^1.1.0",
-		"@mote-software/markitdown": "^1.2.0",
-		"@picocss/pico": "^2.1.1",
+		"@aws-sdk/client-s3": "^3.883.0",
 		"@prisma/client": "^6.19.3",
 		"better-auth": "^1.6.23",
 		"bootstrap": "^5.3.8",

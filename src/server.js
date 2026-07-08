@@ -1,6 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { toNodeHandler } from 'better-auth/node';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -23,8 +20,6 @@ import { failStuckProcessingDocuments } from '#services/documentService.js';
 import v1Router from '#v1/routes/index.js';
 import { validateProductionConfig } from '#validateConfig.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 validateProductionConfig(config);
 
 await seedAchievements();
@@ -34,10 +29,6 @@ const app = express();
 
 if (config.trustProxy) {
   app.set('trust proxy', 1);
-}
-
-if (!fs.existsSync(config.uploadsDir)) {
-  fs.mkdirSync(config.uploadsDir, { recursive: true });
 }
 
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));

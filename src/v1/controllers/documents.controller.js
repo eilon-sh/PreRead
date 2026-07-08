@@ -1,10 +1,13 @@
-import fs from 'node:fs';
+import { fileTypeFromBuffer } from 'file-type';
+import config from '#config.js';
+import prisma from '#db/prisma.js';
 import {
-  createDocument,
+  createDocumentRecord,
   deleteDocument,
   getDocument,
   listDocuments,
 } from '#services/documentService.js';
+import { buildDocumentS3Key, uploadPdfToS3 } from '#services/s3Service.js';
 import { parseIntSafe } from '#utils/parseIntUtils.js';
 
 export async function list(req, res) {
@@ -21,13 +24,41 @@ export async function getById(req, res) {
 }
 
 export async function upload(req, res) {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: 'PDF file is required' });
+  }
+
   try {
-    const result = await createDocument(req.user.id, req.file, req.body.minCefr);
-    res.status(202).json(result);
-  } catch (err) {
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    const detectedType = await fileTypeFromBuffer(file.buffer);
+    if (detectedType?.mime !== 'application/pdf') {
+      return res.status(400).json({ error: 'Uploaded file is not a valid PDF' });
     }
+
+    const minCefr = req.body.minCefr ? String(req.body.minCefr).toUpperCase() : null;
+    const s3Key = buildDocumentS3Key(req.user.id, file.originalname);
+
+    const result = await createDocumentRecord(req.user.id, {
+      filename: file.originalname,
+      minCefr,
+      s3Key,
+    });
+
+    try {
+      await uploadPdfToS3({ key: s3Key, buffer: file.buffer });
+    } catch (uploadErr) {
+      await prisma.document.update({
+        where: { id: result.id },
+        data: { processingStatus: 'failed' },
+      });
+      throw uploadErr;
+    }
+
+    res.status(202).json({
+      ...result,
+      message: 'Document uploaded to S3 and processing started.',
+    });
+  } catch (err) {
     const status = err.status || 500;
     res.status(status).json({ error: err.message });
   }

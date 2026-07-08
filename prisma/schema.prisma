@@ -78,12 +78,16 @@ model Document {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   filename         String
   processingStatus String    @default("processing")
+  minCefr          String?
+  s3Key            String?
+  contentType      String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   processedAt      DateTime?
   words            Word[]
 
   @@index([userId])
+  @@index([s3Key])
   @@map("documents")
 }
 
@@ -98,6 +102,7 @@ model Word {
   translation String?
   flashcard  Flashcard?
 
+  @@unique([documentId, word, cefr])
   @@index([documentId])
   @@index([cefr])
   @@map("words")

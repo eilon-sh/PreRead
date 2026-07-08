@@ -1,16 +1,4 @@
-import fs from 'node:fs';
-import { fileTypeFromBuffer } from 'file-type';
 import prisma from '#db/prisma.js';
-import { today } from '#utils/dateUtils.js';
-import { extractWords } from './bedrockService.js';
-import { checkAchievements, getUserStats } from './gameService.js';
-import { pdfToMarkdown } from './pdfService.js';
-
-function wordKey(text) {
-  return String(text || '')
-    .trim()
-    .toLowerCase();
-}
 
 export function getDocumentProcessingState(processingStatus) {
   return {
@@ -40,6 +28,8 @@ function mapDocument(d, wordCount) {
     id: d.id,
     user_id: d.userId,
     filename: d.filename,
+    min_cefr: d.minCefr ?? null,
+    s3_key: d.s3Key ?? null,
     created_at: d.createdAt.toISOString(),
     processing_status: processingState.status,
     processed_at:
@@ -48,95 +38,6 @@ function mapDocument(d, wordCount) {
         : null,
     ...(wordCount !== undefined ? { word_count: wordCount } : {}),
   };
-}
-
-async function saveExtractedWords(documentId, words) {
-  const existingRows = await prisma.word.findMany({
-    where: { documentId },
-    select: { word: true },
-  });
-  const existingKeys = new Set(existingRows.map((row) => wordKey(row.word)));
-
-  const seenInBatch = new Set();
-  const toCreate = [];
-
-  for (const w of words) {
-    const key = wordKey(w.word);
-    if (!key || seenInBatch.has(key) || existingKeys.has(key)) continue;
-
-    seenInBatch.add(key);
-    toCreate.push(w);
-  }
-
-  if (toCreate.length === 0) return;
-
-  await prisma.$transaction(
-    async (tx) => {
-      const createdWords = await tx.word.createManyAndReturn({
-        data: toCreate.map((w) => ({
-          documentId,
-          word: w.word,
-          definition: w.definition,
-          cefr: w.cefr,
-          context: w.context,
-          translation: w.translation,
-        })),
-      });
-
-      await tx.flashcard.createMany({
-        data: createdWords.map((word) => ({
-          wordId: word.id,
-          easeFactor: 2.5,
-          interval: 0,
-          repetitions: 0,
-          nextReview: today(),
-        })),
-      });
-    },
-    { timeout: 30_000 },
-  );
-}
-
-export async function processUploadedDocument({ filePath, documentId, userId, minCefr }) {
-  try {
-    const { markdown, textLength } = await pdfToMarkdown(filePath);
-
-    if (textLength < 10) {
-      console.error(`[document:${documentId}] Processing failed: Could not extract text from PDF`);
-      await prisma.document.update({
-        where: { id: documentId },
-        data: {
-          processingStatus: 'failed',
-        },
-      });
-      return;
-    }
-
-    const words = await extractWords(markdown, minCefr);
-    await saveExtractedWords(documentId, words);
-
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        processingStatus: 'ready',
-        processedAt: new Date(),
-      },
-    });
-    const stats = await getUserStats(userId);
-    await checkAchievements(userId, stats);
-  } catch (err) {
-    console.error(`[document:${documentId}] Processing failed:`, err);
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        processingStatus: 'failed',
-      },
-    });
-  } finally {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-  }
 }
 
 export async function listDocuments(userId) {
@@ -158,34 +59,15 @@ export async function getDocument(userId, id) {
   return mapDocument(doc, doc._count.words);
 }
 
-export async function createDocument(userId, file, minCefr) {
-  if (!file) {
-    throw Object.assign(new Error('PDF file is required'), { status: 400 });
-  }
-
-  const fileBuffer = await fs.promises.readFile(file.path);
-  const detectedType = await fileTypeFromBuffer(fileBuffer);
-
-  if (detectedType?.mime !== 'application/pdf') {
-    fs.unlinkSync(file.path);
-    throw Object.assign(new Error('Uploaded file is not a valid PDF'), {
-      status: 400,
-    });
-  }
-
+export async function createDocumentRecord(userId, uploadData) {
   const doc = await prisma.document.create({
     data: {
       userId,
-      filename: file.originalname,
+      filename: uploadData.filename,
       processingStatus: 'processing',
+      minCefr: uploadData.minCefr || null,
+      s3Key: uploadData.s3Key,
     },
-  });
-
-  void processUploadedDocument({
-    filePath: file.path,
-    documentId: doc.id,
-    userId,
-    minCefr: minCefr || null,
   });
 
   return {
