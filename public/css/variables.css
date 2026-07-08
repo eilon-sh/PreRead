@@ -8,12 +8,17 @@
   --muted: #6b7280;
   --primary: #4f46e5;
   --primary-hover: #4338ca;
+  --on-primary: #ffffff;
   --border: #e5e7eb;
+  --border-strong: #d1d5db;
   --success: #059669;
   --error: #dc2626;
   --radius: 12px;
   --nav-height: 64px;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-glow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 4px 20px color-mix(in srgb, var(--primary) 12%, transparent);
   --input-bg: #ffffff;
   --status-info-bg: #eff6ff;
   --status-info-text: #1d4ed8;
@@ -23,6 +28,13 @@
   --achievement-unlocked-border: #bbf7d0;
   --toast-bg: #1a1a2e;
   --toast-text: #ffffff;
+  --bs-primary: var(--primary);
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-body-bg: var(--bg);
+  --bs-body-color: var(--text);
+  --bs-border-color: var(--border);
+  --bs-link-color: var(--primary);
+  --bs-link-hover-color: var(--primary-hover);
 }
 
 [data-theme="dark"] {
@@ -35,6 +47,7 @@
   --muted: #a8b0c1;
   --primary: #8b9aff;
   --primary-hover: #b0bbff;
+  --on-primary: #10131c;
   --border: #343d54;
   --border-strong: #4a5572;
   --success: #3ee0a5;
@@ -57,4 +70,5 @@
   --nav-active-bg: rgba(139, 154, 255, 0.22);
   --nav-active-ring: rgba(176, 187, 255, 0.45);
   --nav-divider: #434d68;
+  --bs-primary-rgb: 139, 154, 255;
 }

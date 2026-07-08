@@ -9,8 +9,8 @@ This project uses **Biome** for JS/CSS/JSON and **Prettier** (with `prettier-plu
 
 ## Commands
 
-- `npm run check` — verify format + lint (Biome + EJS)
-- `npm run fix` — auto-fix and format everything
+- `npm run check` - verify format + lint (Biome + EJS)
+- `npm run fix` - auto-fix and format everything
 
 ## Conventions
 

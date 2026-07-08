@@ -1,7 +1,80 @@
+/* On-screen print preview - always light, regardless of app theme */
+.print-preview .card,
+.print-preview .card-body {
+  background: #fff !important;
+  color: #111 !important;
+  border-color: #dee2e6 !important;
+  box-shadow: none !important;
+}
+
+.print-preview .print-sheet h2 {
+  color: #111 !important;
+}
+
+.print-preview .print-card {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px dashed #333 !important;
+}
+
+.print-preview .print-card h3,
+.print-preview .print-card p {
+  color: #111 !important;
+}
+
+.print-preview .duplex-guide {
+  background: #f8f9fb;
+  border-color: #dee2e6;
+  color: #1a1a2e;
+}
+
+.print-preview .duplex-guide-text,
+.print-preview .duplex-guide-step {
+  color: #4b5563;
+}
+
+.print-preview .duplex-guide-mini-card {
+  background: #fff;
+  border-color: #9ca3af;
+  color: #111;
+}
+
+.print-preview .duplex-guide-mini-card.is-back {
+  background: #f3f4f6;
+}
+
+.print-preview .duplex-guide-sheet-label {
+  color: #4f46e5;
+}
+
 @media print {
-  body {
-    background: #fff;
-    color: #000;
+  :root,
+  [data-theme="dark"] {
+    color-scheme: light;
+  }
+
+  body,
+  .card,
+  .card-body,
+  main,
+  .container,
+  .app-container,
+  #wordsTable,
+  .print-sheet,
+  .print-sheet h2,
+  .print-grid,
+  .print-card,
+  .print-card h3,
+  .print-card p {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+  }
+
+  .print-card {
+    border: 1px dashed #333 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .app-nav,
@@ -20,7 +93,6 @@
 
   .card {
     border: none;
-    box-shadow: none;
   }
 
   .card-body {
@@ -29,5 +101,13 @@
 
   #wordsTable {
     overflow: visible;
+  }
+
+  .print-sheet {
+    break-after: page;
+  }
+
+  .print-sheet:last-child {
+    break-after: auto;
   }
 }

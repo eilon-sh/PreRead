@@ -1,5 +1,5 @@
 body {
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -32,4 +32,46 @@ h1 {
 .subtitle {
   color: var(--muted);
   margin-bottom: 1.5rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.muted,
+.text-muted {
+  color: var(--muted) !important;
+}
+
+.badge {
+  font-size: 0.8rem;
+  margin-inline-end: 0.5rem;
+}
+
+.status {
+  font-size: 0.9rem;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
