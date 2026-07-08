@@ -1,5 +1,5 @@
 <button
-  class="theme-toggle theme-toggle-standalone"
+  class="theme-toggle<%= typeof standalone !== 'undefined' && !standalone ? '' : ' theme-toggle-standalone' %>"
   id="themeToggle"
   type="button"
   aria-label="החלף ערכת צבעים"
