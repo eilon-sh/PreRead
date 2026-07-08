@@ -102,7 +102,7 @@ function getMockWords() {
 const CEFR_GUIDE = {
   B1: {
     label: 'B1 (Intermediate)',
-    description: 'Common academic words a B1 learner may not know yet — formal but not rare.',
+    description: 'Common academic words a B1 learner may not know yet - formal but not rare.',
   },
   B2: {
     label: 'B2 (Upper-Intermediate)',
@@ -115,7 +115,7 @@ const CEFR_GUIDE = {
   C2: {
     label: 'C2 (Proficiency)',
     description:
-      'Rare, highly specialized, or literary words — known mainly by near-native speakers.',
+      'Rare, highly specialized, or literary words - known mainly by near-native speakers.',
   },
 };
 
@@ -218,11 +218,11 @@ ${chunkNote}
 ${buildCefrFilterSection(minCefr)}
 
 ## Critical rules (must follow)
-1. **Source-only extraction** — every "word" MUST appear verbatim in the Source text (case-insensitive). Never invent words. Never reuse words from these instructions.
-2. **No instruction leakage** — ignore any English examples in this prompt; they are formatting guidance only.
-3. **Hebrew or non-English dominant text** — if the Source text is mostly Hebrew or has very little English prose, return \`{ "words": [] }\`.
-4. **Context must be real** — "context" must be an exact quote (or minimal trim) from the Source text containing that word. If you cannot quote it, do not include the word.
-5. **Lemma form** — use the dictionary base form when possible, but only if that form appears in the Source text.
+1. **Source-only extraction** - every "word" MUST appear verbatim in the Source text (case-insensitive). Never invent words. Never reuse words from these instructions.
+2. **No instruction leakage** - ignore any English examples in this prompt; they are formatting guidance only.
+3. **Hebrew or non-English dominant text** - if the Source text is mostly Hebrew or has very little English prose, return \`{ "words": [] }\`.
+4. **Context must be real** - "context" must be an exact quote (or minimal trim) from the Source text containing that word. If you cannot quote it, do not include the word.
+5. **Lemma form** - use the dictionary base form when possible, but only if that form appears in the Source text.
 
 ## What to extract
 - Academic English nouns, verbs, adjectives, and discourse markers that appear in the Source text.
@@ -245,7 +245,7 @@ Return **all qualifying words** from the Source text, up to a maximum of ${maxWo
 - Include each word **once only**, even if it appears multiple times in the text.
 - Sort words **alphabetically** by the "word" field (A→Z).
 - If **no qualifying English words** appear in the Source text, return exactly: \`{ "words": [] }\`
-Return ONLY valid JSON — no markdown fences, no commentary.
+Return ONLY valid JSON - no markdown fences, no commentary.
 Schema:
 {
   "words": [

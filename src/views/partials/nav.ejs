@@ -4,10 +4,7 @@
       <img src="/images/logo.svg" alt="Preread" class="nav-logo" width="36" height="36" />
     </a>
     <div class="d-flex align-items-center gap-2 ms-auto order-md-2">
-      <button class="theme-toggle" id="themeToggle" type="button" aria-label="החלף ערכת צבעים">
-        <span class="theme-icon theme-icon-light" aria-hidden="true">☀️</span>
-        <span class="theme-icon theme-icon-dark" aria-hidden="true">🌙</span>
-      </button>
+      <%- include('theme-toggle', { standalone: false }) %>
       <button
         class="navbar-toggler app-nav-toggler"
         id="navToggle"

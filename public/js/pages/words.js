@@ -6,6 +6,7 @@
   const printMode = params.get('printCards') === '1';
 
   if (printMode) {
+    document.body.classList.add('print-preview');
     document.querySelector('.filters')?.classList.add('d-none');
   }
 
@@ -41,68 +42,47 @@
 
   function renderDuplexGuideHtml() {
     return `
-      <aside class="duplex-guide no-print" id="duplexGuide" aria-label="הנחיית הדפסה דו-צדדית">
+      <aside class="duplex-guide no-print" aria-label="הנחיית הדפסה דו-צדדית">
         <div class="duplex-guide-header">
-          <div>
-            <p class="duplex-guide-title">הדפסה דו-צדדית נדרשת</p>
-          </div>
-          <button class="btn btn-sm btn-outline-secondary" type="button" id="duplexGuideDismiss" aria-label="סגור והסתר">
-            הבנתי
-          </button>
+          <p class="duplex-guide-title">הדפסה דו-צדדית - איך זה עובד?</p>
+          <p class="duplex-guide-text">
+            הדפיסו קודם את עמוד החזית, החזירו את הנייר ללא סיבוב (צד ארוך), ואז הדפיסו את עמוד הגב.
+          </p>
         </div>
-        <div class="duplex-guide-visual">
-          <div class="duplex-guide-scene">
-            <svg class="duplex-guide-printer" width="56" height="44" viewBox="0 0 72 56" fill="none" aria-hidden="true">
-              <rect x="14" y="22" width="44" height="26" rx="3" fill="currentColor" opacity="0.15"></rect>
-              <rect x="14" y="22" width="44" height="26" rx="3" stroke="currentColor" stroke-width="1.5"></rect>
-              <rect x="20" y="6" width="32" height="18" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
-              <rect x="18" y="34" width="36" height="14" rx="2" fill="currentColor" opacity="0.25"></rect>
-            </svg>
-            <div class="duplex-guide-perspective">
-              <div class="duplex-guide-paper">
-                <div class="duplex-guide-paper-face front">
-                  <small>צד קדמי</small>
-                  <strong>1</strong>
-                  <div class="duplex-guide-paper-line"></div>
-                  <div class="duplex-guide-paper-line short"></div>
-                </div>
-                <div class="duplex-guide-paper-face back">
-                  <small>צד אחורי</small>
-                  <strong>2</strong>
-                  <div class="duplex-guide-paper-line"></div>
-                  <div class="duplex-guide-paper-line short"></div>
-                </div>
-              </div>
+        <ol class="duplex-guide-steps">
+          <li class="duplex-guide-step">לחצו <strong>הדפס עכשיו</strong> - יודפס עמוד החזית (המילים באנגלית)</li>
+          <li class="duplex-guide-step">הוציאו את הנייר, <strong>הפכו אותו על הצד הארוך</strong> והחזירו למגש</li>
+          <li class="duplex-guide-step">הדפיסו שוב - יודפס עמוד הגב (הגדרות ותרגומים) בדיוק מאחורי החזית</li>
+          <li class="duplex-guide-step">גזרו לאורך הקווים המקווקווים - כל כרטיסייה מוכנה</li>
+        </ol>
+        <div class="duplex-guide-demo" aria-hidden="true">
+          <div class="duplex-guide-sheet">
+            <span class="duplex-guide-sheet-label">עמוד 1 · חזית</span>
+            <div class="duplex-guide-mini-grid">
+              <div class="duplex-guide-mini-card">Hypothesis</div>
+              <div class="duplex-guide-mini-card">Framework</div>
+              <div class="duplex-guide-mini-card">Methodology</div>
+              <div class="duplex-guide-mini-card">Analysis</div>
             </div>
           </div>
-          <div class="duplex-guide-caption" aria-live="polite">
-            <span class="duplex-caption-step">צד קדמי - חזית הכרטיסיות</span>
-            <span class="duplex-caption-step">צד אחורי - גב הכרטיסיות</span>
+          <div class="duplex-guide-flow">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M7 17l5-5-5-5M13 17l5-5-5-5"/>
+            </svg>
+            <span>הדפסה על הצד השני</span>
           </div>
-          <div class="duplex-guide-dots" aria-hidden="true">
-            <span class="duplex-guide-dot"></span>
-            <span class="duplex-guide-dot"></span>
+          <div class="duplex-guide-sheet">
+            <span class="duplex-guide-sheet-label">עמוד 2 · גב</span>
+            <div class="duplex-guide-mini-grid">
+              <div class="duplex-guide-mini-card is-back">הגדרה…</div>
+              <div class="duplex-guide-mini-card is-back">הגדרה…</div>
+              <div class="duplex-guide-mini-card is-back">הגדרה…</div>
+              <div class="duplex-guide-mini-card is-back">הגדרה…</div>
+            </div>
           </div>
         </div>
       </aside>
     `;
-  }
-
-  function initDuplexGuide() {
-    const guide = document.getElementById('duplexGuide');
-    const dismissBtn = document.getElementById('duplexGuideDismiss');
-    if (!guide || !dismissBtn) return;
-
-    const storageKey = 'preread.duplexGuide.dismissed';
-    if (localStorage.getItem(storageKey) === '1') {
-      guide.remove();
-      return;
-    }
-
-    dismissBtn.addEventListener('click', () => {
-      localStorage.setItem(storageKey, '1');
-      guide.remove();
-    });
   }
 
   function renderPrintLayout(words) {
@@ -146,7 +126,6 @@
     if (printBtn) {
       printBtn.addEventListener('click', () => window.print());
     }
-    initDuplexGuide();
   }
 
   async function loadWords() {

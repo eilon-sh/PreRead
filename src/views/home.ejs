@@ -12,52 +12,74 @@
     <%- include('partials/theme-init') %>
     <%- include('partials/styles') %>
   </head>
-  <body class="stitch-landing-page">
-    <header class="stitch-header">
-      <div class="container stitch-shell stitch-header-inner">
-        <div class="stitch-header-actions d-flex align-items-center gap-2">
-          <a href="/login" class="stitch-link-btn">התחברות</a>
-          <a href="/register" class="stitch-primary-btn stitch-small-btn">הרשמה בחינם</a>
+  <body class="landing-page">
+    <header class="landing-header sticky-top">
+      <div class="container d-flex align-items-center justify-content-between gap-3 py-3">
+        <div class="d-flex align-items-center gap-2">
+          <a href="/login" class="btn btn-link text-muted text-decoration-none fw-semibold px-2"
+            >התחברות</a
+          >
+          <a href="/register" class="btn btn-primary rounded-pill px-3">הרשמה בחינם</a>
         </div>
-        <div class="stitch-header-theme">
-          <%- include('partials/theme-toggle', { standalone: false }) %>
-        </div>
+        <%- include('partials/theme-toggle', { standalone: false }) %>
       </div>
     </header>
 
     <main>
-      <section class="stitch-hero">
-        <div class="container stitch-shell">
+      <section class="landing-hero">
+        <div class="container">
           <div class="row align-items-center g-4 g-lg-5">
-            <div class="col-lg-6 stitch-hero-copy">
-              <div class="stitch-pill">חדש: בינה מלאכותית לניתוח טקסטים</div>
-              <h1>ללמוד אנגלית אקדמית מתוך <span>המחקרים שלך</span></h1>
-              <p>
+            <div class="col-lg-6">
+              <span
+                class="badge rounded-pill bg-primary-subtle text-primary-emphasis mb-3 px-3 py-2"
+                >חדש: בינה מלאכותית לניתוח טקסטים</span
+              >
+              <h1 class="fw-bold mb-3">
+                ללמוד אנגלית אקדמית מתוך <span class="text-primary">המחקרים שלך</span>
+              </h1>
+              <p class="text-muted landing-hero-lead mb-4">
                 העלה מאמרי PDF, המערכת שלנו תסרוק את המילים המורכבות ותיצור עבורך כרטיסיות לימוד
                 מותאמות אישית ברמה הגבוהה ביותר.
               </p>
-              <div class="stitch-hero-actions d-flex flex-wrap gap-2">
-                <a href="/register" class="stitch-primary-btn stitch-large-btn">העלה קובץ עכשיו</a>
-                <a href="#how-it-works" class="stitch-outline-btn stitch-large-btn">איך זה עובד?</a>
+              <div class="d-flex flex-wrap gap-2">
+                <a href="/register" class="btn btn-primary btn-lg rounded-pill px-4"
+                  >העלה קובץ עכשיו</a
+                >
+                <a href="#how-it-works" class="btn btn-outline-secondary btn-lg rounded-pill px-4"
+                  >איך זה עובד?</a
+                >
               </div>
             </div>
             <div
-              class="col-lg-6 stitch-hero-visual d-none d-md-flex justify-content-center"
+              class="col-lg-6 landing-demo-wrap d-none d-md-flex justify-content-center"
               aria-hidden="true"
             >
-              <div class="stitch-hero-glow"></div>
-              <article class="stitch-card">
-                <div class="stitch-card-top d-flex justify-content-between align-items-center">
-                  <span class="stitch-level">C1 Advanced</span>
-                  <span class="stitch-audio">🔊</span>
+              <div class="landing-demo-glow"></div>
+              <article class="card landing-demo-card shadow border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis"
+                    >C1 Advanced</span
+                  >
+                  <svg
+                    class="landing-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                    aria-hidden="true"
+                  >
+                    <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                    <path d="M15.54 8.46a5 5 0 010 7.07" />
+                    <path d="M19.07 4.93a10 10 0 010 14.14" />
+                  </svg>
                 </div>
-                <div class="stitch-card-main text-center">
-                  <h2>Hypothesis</h2>
-                  <p>/haɪˈpɒθəsɪs/</p>
+                <div class="landing-demo-word text-center mb-3">
+                  <h2 class="text-primary fw-bold mb-1">Hypothesis</h2>
+                  <p class="text-muted landing-demo-ipa mb-0">/haɪˈpɒθəsɪs/</p>
                 </div>
-                <div class="stitch-card-def">
-                  <h3>הגדרה בעברית</h3>
-                  <p>השערה, היפותזה</p>
+                <div class="bg-body-secondary rounded-3 p-3 border">
+                  <h3 class="h6 text-primary mb-1">הגדרה בעברית</h3>
+                  <p class="mb-0 fw-semibold">השערה, היפותזה</p>
                 </div>
               </article>
             </div>
@@ -65,19 +87,29 @@
         </div>
       </section>
 
-      <section class="stitch-features">
-        <div class="container stitch-shell">
-          <div class="stitch-section-title">
-            <h2>כל מה שצריך כדי לשלוט בשפה האקדמית</h2>
-            <span></span>
+      <section class="py-5 bg-body-tertiary">
+        <div class="container">
+          <div class="mb-4">
+            <h2 class="fw-bold mb-2">כל מה שצריך כדי לשלוט בשפה האקדמית</h2>
+            <div class="landing-section-accent" aria-hidden="true"></div>
           </div>
 
           <div class="row g-3">
             <div class="col-12 col-lg-8">
-              <article class="stitch-feature stitch-feature-wide h-100">
-                <div class="stitch-icon">📄</div>
-                <h3>ניתוח מאמרים מקצועיים</h3>
-                <p>
+              <article class="card border-0 shadow-sm h-100 p-4">
+                <svg
+                  class="landing-icon mb-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                </svg>
+                <h3 class="h5 fw-bold mb-2">ניתוח מאמרים מקצועיים</h3>
+                <p class="text-muted mb-0">
                   האלגוריתם מזהה מונחים אקדמיים, מילות קישור ומבני תחביר מורכבים בתוך המאמרים שאתה
                   מעלה.
                 </p>
@@ -85,66 +117,85 @@
             </div>
 
             <div class="col-12 col-lg-4">
-              <article class="stitch-feature stitch-feature-primary h-100">
-                <div class="stitch-icon">📊</div>
-                <h3>דירוג רמת CEFR</h3>
-                <p>כל מילה מתויגת לפי רמות B2-C2.</p>
+              <article class="card border-primary border-opacity-25 bg-primary-subtle h-100 p-4">
+                <svg
+                  class="landing-icon mb-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <path d="M18 20V10M12 20V4M6 20v-6" />
+                </svg>
+                <h3 class="h5 fw-bold mb-2">דירוג רמת CEFR</h3>
+                <p class="text-muted mb-0">כל מילה מתויגת לפי רמות B2-C2.</p>
               </article>
             </div>
 
             <div class="col-12 col-md-5">
-              <article class="stitch-feature stitch-feature-accent h-100">
-                <h3>אלגוריתם SM-2</h3>
-                <p>חזרה מרווחת שמתזמנת למידה בדיוק כשצריך.</p>
+              <article class="card border-success border-opacity-25 bg-success-subtle h-100 p-4">
+                <h3 class="h5 fw-bold mb-2">אלגוריתם SM-2</h3>
+                <p class="text-muted mb-0">חזרה מרווחת שמתזמנת למידה בדיוק כשצריך.</p>
               </article>
             </div>
 
             <div class="col-12 col-md-7">
               <article
-                class="stitch-feature stitch-feature-game h-100 d-flex align-items-center justify-content-between gap-3"
+                class="card border-0 shadow-sm h-100 p-4 d-flex align-items-center justify-content-between gap-3"
               >
                 <div>
-                  <h3>למידה חווייתית</h3>
-                  <p>משחקים, XP והישגים שהופכים את הלמידה לחלק מהשגרה.</p>
+                  <h3 class="h5 fw-bold mb-2">למידה חווייתית</h3>
+                  <p class="text-muted mb-0">משחקים, XP והישגים שהופכים את הלמידה לחלק מהשגרה.</p>
                 </div>
-                <span class="stitch-game-icon">🎮</span>
+                <svg
+                  class="landing-icon landing-icon-lg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  aria-hidden="true"
+                >
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <path d="M6 12h4M8 10v4M15 11h.01M18 13h.01" />
+                </svg>
               </article>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" class="stitch-steps">
-        <div class="container stitch-shell">
-          <h2 class="text-center">3 צעדים להצלחה אקדמית</h2>
+      <section id="how-it-works" class="py-5">
+        <div class="container">
+          <h2 class="text-center fw-bold mb-4">3 צעדים להצלחה אקדמית</h2>
           <div class="row g-3">
             <div class="col-md-4">
-              <article class="stitch-step h-100">
-                <span class="stitch-step-num">1</span>
-                <h3>מעלים קובץ PDF</h3>
+              <article class="card border-0 shadow-sm h-100 p-4 text-center">
+                <span class="landing-step-num mx-auto">1</span>
+                <h3 class="h6 fw-semibold mb-0">מעלים קובץ PDF</h3>
               </article>
             </div>
             <div class="col-md-4">
-              <article class="stitch-step h-100">
-                <span class="stitch-step-num">2</span>
-                <h3>המערכת מנתחת ומחלצת מילים</h3>
+              <article class="card border-0 shadow-sm h-100 p-4 text-center">
+                <span class="landing-step-num mx-auto">2</span>
+                <h3 class="h6 fw-semibold mb-0">המערכת מנתחת ומחלצת מילים</h3>
               </article>
             </div>
             <div class="col-md-4">
-              <article class="stitch-step h-100">
-                <span class="stitch-step-num">3</span>
-                <h3>לומדים עם כרטיסיות חכמות</h3>
+              <article class="card border-0 shadow-sm h-100 p-4 text-center">
+                <span class="landing-step-num mx-auto">3</span>
+                <h3 class="h6 fw-semibold mb-0">לומדים עם כרטיסיות חכמות</h3>
               </article>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="stitch-bottom-cta">
-        <div class="container stitch-shell">
-          <div class="stitch-bottom-card text-center">
-            <h2>מוכן לשדרג את האנגלית שלך?</h2>
-            <a href="/register" class="stitch-light-btn stitch-large-btn">התחל בחינם עכשיו</a>
+      <section class="pb-5">
+        <div class="container">
+          <div class="landing-cta text-center text-white p-4 p-md-5">
+            <h2 class="fw-bold mb-4">מוכן לשדרג את האנגלית שלך?</h2>
+            <a href="/register" class="btn btn-light btn-lg rounded-pill px-4">התחל בחינם עכשיו</a>
           </div>
         </div>
       </section>
