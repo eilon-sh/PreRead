@@ -16,9 +16,11 @@
     <header class="stitch-header">
       <div class="container stitch-shell stitch-header-inner">
         <div class="stitch-header-actions d-flex align-items-center gap-2">
-          <%- include('partials/theme-toggle') %>
           <a href="/login" class="stitch-link-btn">התחברות</a>
           <a href="/register" class="stitch-primary-btn stitch-small-btn">הרשמה בחינם</a>
+        </div>
+        <div class="stitch-header-theme">
+          <%- include('partials/theme-toggle', { standalone: false }) %>
         </div>
       </div>
     </header>
@@ -116,15 +118,24 @@
         <div class="container stitch-shell">
           <h2 class="text-center">3 צעדים להצלחה אקדמית</h2>
           <div class="row g-3">
-            <% const steps = ['מעלים קובץ PDF', 'המערכת מנתחת ומחלצת מילים', 'לומדים עם כרטיסיות
-            חכמות']; %> <% steps.forEach(function(step, i) { %>
             <div class="col-md-4">
               <article class="stitch-step h-100">
-                <span class="stitch-step-num"><%= i + 1 %></span>
-                <h3><%= step %></h3>
+                <span class="stitch-step-num">1</span>
+                <h3>מעלים קובץ PDF</h3>
               </article>
             </div>
-            <% }); %>
+            <div class="col-md-4">
+              <article class="stitch-step h-100">
+                <span class="stitch-step-num">2</span>
+                <h3>המערכת מנתחת ומחלצת מילים</h3>
+              </article>
+            </div>
+            <div class="col-md-4">
+              <article class="stitch-step h-100">
+                <span class="stitch-step-num">3</span>
+                <h3>לומדים עם כרטיסיות חכמות</h3>
+              </article>
+            </div>
           </div>
         </div>
       </section>

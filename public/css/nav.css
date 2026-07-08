@@ -1,6 +1,7 @@
 .app-nav {
   --nav-height: 64px;
   z-index: 100;
+  min-height: var(--nav-height);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 0 1.25rem;
@@ -11,6 +12,8 @@
 
 .app-nav .container {
   gap: 1rem;
+  align-items: center;
+  min-height: var(--nav-height);
 }
 
 .app-nav-brand {

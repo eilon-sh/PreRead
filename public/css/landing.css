@@ -20,6 +20,9 @@
 
 .stitch-header-inner {
   min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .stitch-logo {
