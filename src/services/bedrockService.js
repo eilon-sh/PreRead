@@ -354,6 +354,11 @@ const BEDROCK_SYSTEM_PROMPT =
   'Never wrap output in markdown code fences. Never add text outside the JSON object.';
 
 async function invokeExtractionPrompt(prompt) {
+  console.log('[Bedrock prompt]', {
+    system: BEDROCK_SYSTEM_PROMPT,
+    user: prompt,
+  });
+
   const parsed = await invokeBedrockConverse({
     system: BEDROCK_SYSTEM_PROMPT,
     messages: [
