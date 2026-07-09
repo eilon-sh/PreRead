@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { toNodeHandler } from 'better-auth/node';
 import cookieParser from 'cookie-parser';
 import express from 'express';
@@ -19,6 +21,8 @@ import {
 import { failStuckProcessingDocuments } from '#services/documentService.js';
 import v1Router from '#v1/routes/index.js';
 import { validateProductionConfig } from '#validateConfig.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 validateProductionConfig(config);
 
@@ -46,20 +50,6 @@ app.locals.googleEnabled = config.google.enabled;
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
     maxAge: config.isProduction ? '1d' : 0,
-    etag: true,
-  }),
-);
-app.use(
-  '/vendor/bootstrap',
-  express.static(path.join(__dirname, '..', 'node_modules', 'bootstrap', 'dist'), {
-    maxAge: config.isProduction ? '7d' : 0,
-    etag: true,
-  }),
-);
-app.use(
-  '/vendor/sweetalert2',
-  express.static(path.join(__dirname, '..', 'node_modules', 'sweetalert2', 'dist'), {
-    maxAge: config.isProduction ? '7d' : 0,
     etag: true,
   }),
 );

@@ -1,4 +1,4 @@
-import { processS3Record } from './processor.mjs';
+import { processS3Record } from './processor.js';
 
 export const handler = async (event) => {
   const records = event.Records || [];

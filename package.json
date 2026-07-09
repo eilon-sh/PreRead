@@ -16,10 +16,12 @@
 		"db:push": "prisma db push",
 		"db:migrate": "prisma migrate dev",
 		"db:deploy": "prisma migrate deploy",
+		"db:setup-dev": "node prisma/setup-dev-db.mjs",
 		"db:studio": "prisma studio",
 		"postinstall": "prisma generate",
 		"test": "node test/e2e.js",
 		"test:unit": "node test/parseIntUtils.test.js",
+		"infra:deploy": "node infra/deploy.mjs",
 		"check": "biome check . && prettier --check \"src/views/**/*.ejs\"",
 		"fix": "biome check --write . && prettier --write \"src/views/**/*.ejs\""
 	},
@@ -27,7 +29,6 @@
 		"@aws-sdk/client-s3": "^3.883.0",
 		"@prisma/client": "^6.19.3",
 		"better-auth": "^1.6.23",
-		"bootstrap": "^5.3.8",
 		"compression": "^1.8.1",
 		"cookie-parser": "^1.4.7",
 		"csrf-csrf": "^4.0.3",
@@ -40,9 +41,9 @@
 		"hpp": "^0.2.3",
 		"morgan": "^1.11.0",
 		"multer": "^2.2.0",
+		"pg": "^8.22.0",
 		"pm2": "^7.0.3",
-		"resend": "^6.17.1",
-		"sweetalert2": "^11.26.25"
+		"resend": "^6.17.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.2",

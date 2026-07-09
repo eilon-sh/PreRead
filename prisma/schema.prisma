@@ -78,6 +78,7 @@ model Document {
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   filename         String
   processingStatus String    @default("processing")
+  processingError  String?
   minCefr          String?
   s3Key            String?
   contentType      String?

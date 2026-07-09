@@ -41,3 +41,22 @@ function showStatusAlert(message, type = 'info') {
     ...getSwalThemeOptions(),
   });
 }
+
+async function showConfirmAlert({
+  title,
+  text,
+  confirmButtonText = 'אישור',
+  cancelButtonText = 'ביטול',
+}) {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText,
+    reverseButtons: true,
+    ...getSwalThemeOptions(),
+  });
+  return result.isConfirmed;
+}

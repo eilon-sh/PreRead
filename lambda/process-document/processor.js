@@ -1,15 +1,16 @@
+import { AnthropicBedrock } from '@anthropic-ai/bedrock-sdk';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { getAuthorizationToken } from '@aws/bedrock-token-generator';
 import { PrismaClient } from '@prisma/client';
+import { decode } from '@toon-format/toon';
 
 const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 const secrets = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
 let prismaClient;
 
 const CEFR_ORDER = ['B1', 'B2', 'C1', 'C2'];
-const MAX_EXTRACTED_WORDS = 30;
-const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'amazon.nova-micro-v1:0';
+const BEDROCK_MODEL_ID =
+  process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-20250514-v1:0';
 const BEDROCK_TEMPERATURE = Number.parseFloat(process.env.BEDROCK_TEMPERATURE || '0');
 const BEDROCK_TOP_P = (() => {
   const value = process.env.BEDROCK_TOP_P;
@@ -39,26 +40,18 @@ const CEFR_GUIDE = {
 };
 
 const BEDROCK_SYSTEM_PROMPT =
-  'You extract academic English vocabulary from PDF documents and return strict JSON only. ' +
+  'You extract academic English vocabulary from PDF documents and return strict TOON format only. ' +
   'Extract ONLY words that literally appear in the attached source document. ' +
   'Never output words from prompt examples or your own invention. ' +
-  'Return an empty words array when the source is mostly non-English or has no suitable vocabulary. ' +
-  'Sort words alphabetically and include each word once only. ' +
-  'Never wrap output in markdown code fences. Never add text outside the JSON object.';
+  'Return ' + toonHeader(0) + ' when the source is mostly non-English or has no suitable vocabulary. ' +
+  'Sort rows alphabetically by word and include each word once only. ' +
+  'Never wrap output in markdown code fences. Never add text outside the TOON block.';
 
-function wordKey(text) {
-  return String(text || '')
-    .trim()
-    .toLowerCase();
-}
+const TOON_WORDS_LIST = 'word,definition,cefr,context,translation';
 
-function wordCefrKey(word, cefr) {
-  return `${wordKey(word)}|${String(cefr || '').toUpperCase()}`;
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
+const toonHeader = (N) => `words[${N}]{${TOON_WORDS_LIST}}:`;
+const wordKey = (text) => String(text || '').trim().toLowerCase();
+const today = () => new Date().toISOString().slice(0, 10);
 
 function buildCefrFilterSection(minCefr) {
   const level = (minCefr || 'B1').toUpperCase();
@@ -90,7 +83,8 @@ ${buildCefrFilterSection(minCefr)}
 ## Critical rules (must follow)
 1. **Source-only extraction** - every "word" MUST appear verbatim in the Source PDF (case-insensitive). Never invent words. Never reuse words from these instructions.
 2. **No instruction leakage** - ignore any English examples in this prompt; they are formatting guidance only.
-3. **Hebrew or non-English dominant text** - if the Source PDF is mostly Hebrew or has very little English prose, return \`{ "words": [] }\`.
+3. **Hebrew or non-English dominant text** - if the Source PDF is mostly Hebrew or has very little English prose, return exactly:
+\`${toonHeader(0)}\`
 4. **Context must be real** - "context" must be an exact quote (or minimal trim) from the Source PDF containing that word. If you cannot quote it, do not include the word.
 5. **Lemma form** - use the dictionary base form when possible, but only if that form appears in the Source PDF.
 
@@ -111,44 +105,39 @@ ${buildCefrFilterSection(minCefr)}
 - "definition" must be a short, clear English definition (one sentence max) in neutral dictionary style.
 
 ## Output
-Return **all qualifying words** from the Source PDF, up to a maximum of ${MAX_EXTRACTED_WORDS}.
+Return **all qualifying words** from the Source PDF.
 - Include each word **once only**, even if it appears multiple times in the text.
-- Sort words **alphabetically** by the "word" field (A→Z).
-- If **no qualifying English words** appear in the Source PDF, return exactly: \`{ "words": [] }\`
-Return ONLY valid JSON - no markdown fences, no commentary.
-Schema:
-{
-  "words": [
-    {
-      "word": "string",
-      "definition": "string",
-      "cefr": "B1|B2|C1|C2",
-      "context": "string",
-      "translation": "string"
-    }
-  ]
-}`;
+- Sort rows **alphabetically** by word (A→Z).
+- Replace N in the header with the exact row count.
+- Quote definition, context, or translation when they contain commas, quotes, or colons.
+- If **no qualifying English words** appear in the Source PDF, return exactly:
+\`${toonHeader(0)}\`
+
+Return ONLY valid TOON (Token-Oriented Object Notation) - no markdown fences, no commentary.
+Template:
+${toonHeader('N')}
+  ${TOON_WORDS_LIST}
+  ...
+
+Example:
+${toonHeader(2)}
+  hypothesis,A proposed explanation,B2,"This hypothesis was tested",השערה
+  methodology,The study of methods,C1,"The methodology was rigorous",מתודולוגיה`;
 }
 
-function parseBedrockResponse(parsed) {
-  const text =
-    parsed.output?.message?.content?.[0]?.text ||
-    parsed.content?.[0]?.text ||
-    parsed.generation ||
-    parsed.completion ||
-    JSON.stringify(parsed);
+function stripMarkdownFences(text) {
+  const fenced = text.match(/```(?:toon)?\s*([\s\S]*?)```/i);
+  return (fenced ? fenced[1] : text).trim();
+}
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('No JSON found in Bedrock response');
-  }
+function extractToonPayload(text) {
+  const cleaned = stripMarkdownFences(text);
+  const match = cleaned.match(/words\[\d+\]\{[^}]+\}:[\s\S]*/);
+  return (match ? match[0] : cleaned).trim();
+}
 
-  const result = JSON.parse(jsonMatch[0]);
-  if (!Array.isArray(result.words)) {
-    throw new Error('Invalid response: missing words array');
-  }
-
-  return result.words.map((w) => ({
+function mapWordsArray(words) {
+  return words.map((w) => ({
     word: w.word,
     definition: w.definition || '',
     cefr: (w.cefr || 'B1').toUpperCase(),
@@ -157,6 +146,37 @@ function parseBedrockResponse(parsed) {
   }));
 }
 
+function parseBedrockResponse(response) {
+  const textBlocks = (response.content || [])
+    .filter((block) => block.type === 'text' && block.text)
+    .map((block) => block.text);
+  const text = textBlocks.join('\n').trim();
+
+  if (!text) {
+    throw new Error('No text found in Bedrock response');
+  }
+
+  const toonPayload = extractToonPayload(text);
+  if (/^words\[\d+\]\{/.test(toonPayload)) {
+    const result = decode(toonPayload);
+    if (!Array.isArray(result.words)) {
+      throw new Error('Invalid TOON response: missing words array');
+    }
+    return mapWordsArray(result.words);
+  }
+
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error('No TOON or JSON found in Bedrock response');
+  }
+
+  const result = JSON.parse(jsonMatch[0]);
+  if (!Array.isArray(result.words)) {
+    throw new Error('Invalid response: missing words array');
+  }
+
+  return mapWordsArray(result.words);
+}
 function filterByMinCefr(words, minCefr) {
   if (!minCefr) return words;
   const minIndex = CEFR_ORDER.indexOf(minCefr.toUpperCase());
@@ -167,36 +187,21 @@ function filterByMinCefr(words, minCefr) {
   });
 }
 
-function cefrRank(cefr) {
-  const idx = CEFR_ORDER.indexOf((cefr || 'B1').toUpperCase());
-  return idx === -1 ? 0 : idx;
-}
-
 function normalizeExtractedWords(words) {
-  const seen = new Set();
   const unique = [];
 
   for (const w of words) {
-    const word = String(w.word || '').trim();
-    const cefr = String(w.cefr || 'B1').toUpperCase();
-    const key = wordCefrKey(word, cefr);
-    if (!wordKey(word) || seen.has(key)) continue;
-    seen.add(key);
+    const key = wordKey(w.word);
     unique.push({
-      word,
+      word: String(w.word || '').trim(),
       definition: String(w.definition || '').trim(),
-      cefr,
+      cefr: String(w.cefr || 'B1').toUpperCase(),
       context: String(w.context || '').trim(),
       translation: String(w.translation || '').trim(),
     });
   }
 
-  unique.sort((a, b) => {
-    const cefrDiff = cefrRank(b.cefr) - cefrRank(a.cefr);
-    if (cefrDiff !== 0) return cefrDiff;
-    return wordKey(a.word).localeCompare(wordKey(b.word), 'en');
-  });
-  return unique.slice(0, MAX_EXTRACTED_WORDS);
+  return unique;
 }
 
 async function getPrisma() {
@@ -235,69 +240,55 @@ async function streamToBuffer(stream) {
 }
 
 async function extractWordsFromPdf(pdfBuffer, minCefr) {
-  const authToken = await getAuthorizationToken({
-    region: process.env.AWS_REGION || 'us-east-1',
-    expiresIn: Number.parseInt(process.env.BEDROCK_TOKEN_EXPIRES_SECONDS || '43200', 10),
-  });
-
-  const inferenceConfig = {
-    maxTokens: 4096,
-    temperature: BEDROCK_TEMPERATURE,
-  };
-  if (BEDROCK_TOP_P !== null) {
-    inferenceConfig.topP = BEDROCK_TOP_P;
-  }
-
+  const client = new AnthropicBedrock({
+      awsRegion: process.env.AWS_REGION || 'us-east-1',
+    });
   const prompt = buildPrompt(minCefr);
-  const response = await fetch(
-    `https://bedrock-runtime.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/model/${encodeURIComponent(BEDROCK_MODEL_ID)}/converse`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({
-        system: [{ text: BEDROCK_SYSTEM_PROMPT }],
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                document: {
-                  format: 'pdf',
-                  name: 'document.pdf',
-                  source: { bytes: pdfBuffer.toString('base64') },
-                },
-              },
-              { text: prompt },
-            ],
-          },
-        ],
-        inferenceConfig,
-      }),
-    },
-  );
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Bedrock invoke failed (${response.status}): ${text}`);
+  const request = {
+    model: BEDROCK_MODEL_ID,
+    max_tokens: 4096,
+    temperature: BEDROCK_TEMPERATURE,
+    system: BEDROCK_SYSTEM_PROMPT,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: pdfBuffer.toString('base64'),
+            },
+          },
+          { type: 'text', text: prompt },
+        ],
+      },
+    ],
+  };
+
+  if (BEDROCK_TOP_P !== null) {
+    request.top_p = BEDROCK_TOP_P;
   }
 
-  const parsed = await response.json();
-  const rawWords = parseBedrockResponse(parsed);
+  const response = await client.messages.create(request);
+  const rawWords = parseBedrockResponse(response);
   return normalizeExtractedWords(filterByMinCefr(rawWords, minCefr));
 }
-
 async function saveExtractedWords(documentId, words) {
-  if (words.length === 0) return;
-
   const prisma = await getPrisma();
+  const existingRows = await prisma.word.findMany({
+    where: { documentId },
+    select: { word: true },
+  });
+  const existingKeys = new Set(existingRows.map((row) => wordKey(row.word)));
+  const filtered = words.filter((w) => !existingKeys.has(wordKey(w.word)));
+  if (filtered.length === 0) return;
+
   await prisma.$transaction(async (tx) => {
-    // Unique (documentId, word, cefr) + skipDuplicates handles retries / races.
     const createdWords = await tx.word.createManyAndReturn({
-      data: words.map((w) => ({
+      data: filtered.map((w) => ({
         documentId,
         word: w.word,
         definition: w.definition,
@@ -305,10 +296,7 @@ async function saveExtractedWords(documentId, words) {
         context: w.context,
         translation: w.translation,
       })),
-      skipDuplicates: true,
     });
-
-    if (createdWords.length === 0) return;
 
     await tx.flashcard.createMany({
       data: createdWords.map((word) => ({
@@ -322,11 +310,19 @@ async function saveExtractedWords(documentId, words) {
   });
 }
 
-async function markDocumentFailed(documentId) {
+function formatProcessingError(err) {
+  const raw = err?.message || String(err || 'Unknown processing error');
+  return raw.replace(/\s+/g, ' ').trim().slice(0, 1000);
+}
+
+async function markDocumentFailed(documentId, err) {
   const prisma = await getPrisma();
   await prisma.document.update({
     where: { id: documentId },
-    data: { processingStatus: 'failed' },
+    data: {
+      processingStatus: 'failed',
+      processingError: formatProcessingError(err),
+    },
   });
 }
 
@@ -351,11 +347,15 @@ export async function processS3Record(record) {
     await saveExtractedWords(document.id, words);
     await prisma.document.update({
       where: { id: document.id },
-      data: { processingStatus: 'ready', processedAt: new Date() },
+      data: {
+        processingStatus: 'ready',
+        processedAt: new Date(),
+        processingError: null,
+      },
     });
   } catch (err) {
     console.error(`[document:${document.id}] lambda processing failed`, err);
-    await markDocumentFailed(document.id);
+    await markDocumentFailed(document.id, err);
     throw err;
   }
 }

@@ -9,7 +9,11 @@ export function getDocumentProcessingState(processingStatus) {
 export async function failStuckProcessingDocuments() {
   const result = await prisma.document.updateMany({
     where: { processingStatus: 'processing' },
-    data: { processingStatus: 'failed' },
+    data: {
+      processingStatus: 'failed',
+      processingError:
+        'Processing interrupted (server restarted while document was still processing).',
+    },
   });
 
   if (result.count > 0) {
@@ -32,6 +36,7 @@ function mapDocument(d, wordCount) {
     s3_key: d.s3Key ?? null,
     created_at: d.createdAt.toISOString(),
     processing_status: processingState.status,
+    processing_error: d.processingError ?? null,
     processed_at:
       processingState.status === 'ready'
         ? (d.processedAt?.toISOString() ?? d.createdAt.toISOString())
@@ -65,6 +70,7 @@ export async function createDocumentRecord(userId, uploadData) {
       userId,
       filename: uploadData.filename,
       processingStatus: 'processing',
+      processingError: null,
       minCefr: uploadData.minCefr || null,
       s3Key: uploadData.s3Key,
     },

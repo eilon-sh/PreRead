@@ -1,5 +1,4 @@
 import { fileTypeFromBuffer } from 'file-type';
-import config from '#config.js';
 import prisma from '#db/prisma.js';
 import {
   createDocumentRecord,
@@ -49,7 +48,10 @@ export async function upload(req, res) {
     } catch (uploadErr) {
       await prisma.document.update({
         where: { id: result.id },
-        data: { processingStatus: 'failed' },
+        data: {
+          processingStatus: 'failed',
+          processingError: String(uploadErr.message || uploadErr).slice(0, 1000),
+        },
       });
       throw uploadErr;
     }

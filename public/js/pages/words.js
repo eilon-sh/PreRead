@@ -2,8 +2,8 @@
   const params = new URLSearchParams(window.location.search);
   const documentId = params.get('documentId') || '';
   const wordsTable = document.getElementById('wordsTable');
-  const studyLink = document.getElementById('studyLink');
   const printCardsLink = document.getElementById('printCardsLink');
+  const deleteDocBtn = document.getElementById('deleteDocBtn');
   const wordsSummary = document.getElementById('wordsSummary');
   const wordsToolbar = document.getElementById('wordsToolbar');
   const printMode = params.get('printCards') === '1';
@@ -12,12 +12,6 @@
     document.body.classList.add('print-preview');
     wordsToolbar?.classList.add('d-none');
     document.querySelector('.words-page-header')?.classList.add('d-none');
-  }
-
-  function updateStudyLink() {
-    const query = new URLSearchParams();
-    if (documentId) query.set('documentId', documentId);
-    studyLink.href = `/study${query.toString() ? `?${query.toString()}` : ''}`;
   }
 
   function updatePrintLink() {
@@ -41,6 +35,64 @@
     return parts.join('\n');
   }
 
+  const PRINT_CARDS_PER_PAGE = 8;
+
+  function chunkWords(words, size) {
+    const chunks = [];
+    for (let i = 0; i < words.length; i += size) {
+      chunks.push(words.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  function renderFrontCard(word) {
+    return `
+      <article class="print-card">
+        <div class="print-card-content">
+          <h3 data-fit-text>${escapeCell(word.word)}</h3>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderBackCard(word) {
+    return `
+      <article class="print-card print-card-back">
+        <div class="print-card-content">
+          <p data-fit-text>${escapeCell(toCardBackText(word)).replace(/\n/g, '<br>')}</p>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderPrintSheet(title, cardsHtml, { isBack = false, pageBreakAfter = false } = {}) {
+    const classes = ['print-sheet'];
+    if (isBack) classes.push('print-back-page');
+    if (pageBreakAfter) classes.push('print-sheet-break');
+    return `
+      <section class="${classes.join(' ')}">
+        <h2 class="h6 print-sheet-title">${title}</h2>
+        <div class="print-grid">${cardsHtml}</div>
+      </section>
+    `;
+  }
+
+  function bindPrintOptions() {
+    const noHeadersCheck = document.getElementById('printNoHeaders');
+    if (!noHeadersCheck) return;
+
+    const saved = localStorage.getItem('printNoHeaders') === '1';
+    noHeadersCheck.checked = saved;
+    noHeadersCheck.addEventListener('change', () => {
+      localStorage.setItem('printNoHeaders', noHeadersCheck.checked ? '1' : '0');
+    });
+  }
+
+  function renderSheetTitle(baseTitle, pageIndex, totalPages) {
+    if (totalPages <= 1) return baseTitle;
+    return `${baseTitle} — עמוד ${pageIndex + 1}`;
+  }
+
   function buildBackOrder(words) {
     const ordered = [];
     for (let i = 0; i < words.length; i += 2) {
@@ -52,13 +104,49 @@
     return ordered;
   }
 
+  function fitTextElement(textEl, container, { minPx = 7, maxPx = 14 } = {}) {
+    textEl.style.fontSize = `${maxPx}px`;
+    textEl.style.lineHeight = '1.35';
+
+    if (textEl.scrollHeight <= container.clientHeight) return;
+
+    let low = minPx;
+    let high = maxPx;
+
+    while (high - low > 0.25) {
+      const mid = (low + high) / 2;
+      textEl.style.fontSize = `${mid}px`;
+      if (textEl.scrollHeight > container.clientHeight) {
+        high = mid;
+      } else {
+        low = mid;
+      }
+    }
+
+    textEl.style.fontSize = `${low}px`;
+  }
+
+  function fitPrintCardText(root = document) {
+    root.querySelectorAll('[data-fit-text]').forEach((textEl) => {
+      const container = textEl.closest('.print-card-content');
+      if (!container) return;
+      const isFront = textEl.tagName === 'H3';
+      fitTextElement(textEl, container, {
+        minPx: 7,
+        maxPx: isFront ? 18 : 14,
+      });
+    });
+  }
+
+  let printFitBound = false;
+
   function renderDuplexGuideHtml() {
     return `
       <aside class="duplex-guide no-print" aria-label="הנחיית הדפסה דו-צדדית">
         <div class="duplex-guide-header">
           <p class="duplex-guide-title">הדפסה דו-צדדית - איך זה עובד?</p>
           <p class="duplex-guide-text">
-            הדפיסו קודם את עמוד החזית, החזירו את הנייר ללא סיבוב (צד ארוך), ואז הדפיסו את עמוד הגב.
+            הדפיסו קודם את עמודי החזית, החזירו את הנייר ללא סיבוב (צד ארוך), ואז הדפיסו את עמודי הגב.
           </p>
         </div>
         <ol class="duplex-guide-steps">
@@ -98,23 +186,27 @@
   }
 
   function renderPrintLayout(words) {
-    const frontCards = words
-      .map(
-        (w) => `
-      <article class="print-card">
-        <h3>${escapeCell(w.word)}</h3>
-      </article>
-    `,
-      )
-      .join('');
+    const frontPages = chunkWords(words, PRINT_CARDS_PER_PAGE);
+    const backPages = frontPages.map((pageWords) => buildBackOrder(pageWords));
+    const sheetConfigs = [
+      ...frontPages.map((pageWords, index) => ({
+        title: renderSheetTitle('חזית הכרטיסיות', index, frontPages.length),
+        cardsHtml: pageWords.map(renderFrontCard).join(''),
+        isBack: false,
+      })),
+      ...backPages.map((pageWords, index) => ({
+        title: renderSheetTitle('גב הכרטיסיות (להדפסה בצד השני)', index, backPages.length),
+        cardsHtml: pageWords.map(renderBackCard).join(''),
+        isBack: true,
+      })),
+    ];
 
-    const backCards = buildBackOrder(words)
-      .map(
-        (w) => `
-      <article class="print-card print-card-back">
-        <p>${escapeCell(toCardBackText(w)).replace(/\n/g, '<br>')}</p>
-      </article>
-    `,
+    const sheetsHtml = sheetConfigs
+      .map((sheet, index) =>
+        renderPrintSheet(sheet.title, sheet.cardsHtml, {
+          isBack: sheet.isBack,
+          pageBreakAfter: index < sheetConfigs.length - 1,
+        }),
       )
       .join('');
 
@@ -124,19 +216,20 @@
         <button class="btn btn-primary btn-sm" id="printBtn" type="button">הדפס עכשיו</button>
         <a href="/words${window.location.search.replace(/([?&])printCards=1(&?)/, '$1').replace(/[?&]$/, '')}" class="btn btn-secondary btn-sm">חזרה לטבלה</a>
       </div>
-      <section class="print-sheet">
-        <h2 class="h6">חזית הכרטיסיות</h2>
-        <div class="print-grid">${frontCards}</div>
-      </section>
-      <section class="print-sheet print-back-page">
-        <h2 class="h6">גב הכרטיסיות (להדפסה בצד השני)</h2>
-        <div class="print-grid">${backCards}</div>
-      </section>
+      ${sheetsHtml}
     `;
 
     const printBtn = document.getElementById('printBtn');
     if (printBtn) {
       printBtn.addEventListener('click', () => window.print());
+    }
+
+    bindPrintOptions();
+    fitPrintCardText(wordsTable);
+
+    if (!printFitBound) {
+      window.addEventListener('beforeprint', () => fitPrintCardText(wordsTable));
+      printFitBound = true;
     }
   }
 
@@ -167,6 +260,54 @@
     wordsSummary.textContent = count === 1 ? 'מילה אחת' : `${count} מילים`;
   }
 
+  function setDeleteButtonVisible(visible) {
+    if (!deleteDocBtn) return;
+    deleteDocBtn.hidden = !visible;
+  }
+
+  async function getDocumentName() {
+    if (!documentId) return 'המסמך';
+    try {
+      const res = await apiFetch(`/api/v1/documents/${documentId}`);
+      if (!res.ok) return 'המסמך';
+      const doc = await res.json();
+      return doc.filename || 'המסמך';
+    } catch {
+      return 'המסמך';
+    }
+  }
+
+  async function handleDeleteDocument() {
+    if (!documentId || !deleteDocBtn) return;
+
+    const docName = await getDocumentName();
+    const shouldDelete = await showConfirmAlert({
+      title: 'מחיקת מסמך',
+      text: `למחוק את "${docName}"?`,
+      confirmButtonText: 'מחק',
+      cancelButtonText: 'ביטול',
+    });
+    if (!shouldDelete) return;
+
+    deleteDocBtn.disabled = true;
+    try {
+      const res = await apiFetch(`/api/v1/documents/${documentId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'מחיקת המסמך נכשלה');
+      showStatusAlert(`המסמך ${truncateFilename(docName, 30)} נמחק`, 'success');
+      window.location.href = '/upload';
+    } catch (err) {
+      showStatusAlert(`שגיאה: ${err.message}`, 'error');
+      deleteDocBtn.disabled = false;
+    }
+  }
+
+  if (deleteDocBtn) {
+    deleteDocBtn.addEventListener('click', handleDeleteDocument);
+  }
+
   async function loadWords() {
     const query = new URLSearchParams();
     if (documentId) query.set('documentId', documentId);
@@ -177,11 +318,11 @@
       return;
     }
     const data = await res.json();
-    updateStudyLink();
     updatePrintLink();
 
     if (data.words.length === 0) {
       if (printCardsLink) printCardsLink.hidden = true;
+      setDeleteButtonVisible(Boolean(documentId));
       if (wordsSummary) wordsSummary.hidden = true;
       const emptyMessage = documentId
         ? 'לא נמצאו מילים במסמך הזה. נסה להעלות מסמך אחר או לשנות את רמת ה-CEFR.'
@@ -196,6 +337,7 @@
     }
 
     if (printCardsLink) printCardsLink.hidden = false;
+    setDeleteButtonVisible(Boolean(documentId));
     setSummary(data.words.length);
 
     wordsTable.innerHTML = `
