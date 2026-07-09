@@ -1,3 +1,5 @@
 node_modules/
 uploads/
+.cursor/
 .env
+skulls-lock.json

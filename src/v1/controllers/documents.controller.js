@@ -1,9 +1,8 @@
-import fs from 'node:fs';
 import {
-  createDocument,
   deleteDocument,
   getDocument,
   listDocuments,
+  uploadDocument,
 } from '#services/documentService.js';
 import { parseIntSafe } from '#utils/parseIntUtils.js';
 
@@ -21,16 +20,19 @@ export async function getById(req, res) {
 }
 
 export async function upload(req, res) {
-  try {
-    const result = await createDocument(req.user.id, req.file, req.body.minCefr);
-    res.status(202).json(result);
-  } catch (err) {
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    const status = err.status || 500;
-    res.status(status).json({ error: err.message });
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: 'PDF file is required' });
   }
+
+  const minCefr = req.body.minCefr ? String(req.body.minCefr).toUpperCase() : null;
+  const result = await uploadDocument(req.user.id, {
+    buffer: file.buffer,
+    originalname: file.originalname,
+    minCefr,
+  });
+
+  res.status(202).json(result);
 }
 
 export async function remove(req, res) {

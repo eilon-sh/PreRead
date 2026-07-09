@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { toNodeHandler } from 'better-auth/node';
@@ -36,10 +35,6 @@ if (config.trustProxy) {
   app.set('trust proxy', 1);
 }
 
-if (!fs.existsSync(config.uploadsDir)) {
-  fs.mkdirSync(config.uploadsDir, { recursive: true });
-}
-
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(helmetMiddleware());
 app.use(compressionMiddleware);
@@ -55,20 +50,6 @@ app.locals.googleEnabled = config.google.enabled;
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
     maxAge: config.isProduction ? '1d' : 0,
-    etag: true,
-  }),
-);
-app.use(
-  '/vendor/bootstrap',
-  express.static(path.join(__dirname, '..', 'node_modules', 'bootstrap', 'dist'), {
-    maxAge: config.isProduction ? '7d' : 0,
-    etag: true,
-  }),
-);
-app.use(
-  '/vendor/sweetalert2',
-  express.static(path.join(__dirname, '..', 'node_modules', 'sweetalert2', 'dist'), {
-    maxAge: config.isProduction ? '7d' : 0,
     etag: true,
   }),
 );
@@ -100,9 +81,15 @@ app.get('/reset-password', (req, res) => {
 app.use(requireAuth);
 
 app.get('/upload', (_req, res) => res.render('upload'));
-app.get('/words', (_req, res) => res.render('words'));
+app.get('/words', (req, res) => {
+  if (!req.query.documentId) return res.redirect('/upload');
+  res.render('words');
+});
 app.get('/study', (_req, res) => res.render('study'));
-app.get('/games', (_req, res) => res.render('games'));
+app.get('/games', (req, res) => {
+  if (!req.query.documentId) return res.redirect('/upload');
+  res.render('games');
+});
 app.get('/profile', (_req, res) => res.render('profile'));
 app.get('/achievements', (_req, res) => res.render('achievements'));
 

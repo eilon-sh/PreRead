@@ -1,18 +1,5 @@
 const ALERT_TIMER_MS = 5000;
 
-function getSwalThemeOptions() {
-  const isDark = document.documentElement.dataset.theme === 'dark';
-  if (!isDark) return {};
-  return {
-    colorScheme: 'dark',
-    customClass: {
-      popup: 'swal-dark-popup',
-      title: 'swal-dark-title',
-      htmlContainer: 'swal-dark-text',
-    },
-  };
-}
-
 function showRateLimitAlert(text) {
   Swal.fire({
     icon: 'warning',
@@ -23,7 +10,6 @@ function showRateLimitAlert(text) {
     timer: ALERT_TIMER_MS,
     timerProgressBar: true,
     showCloseButton: true,
-    ...getSwalThemeOptions(),
   });
 }
 
@@ -38,6 +24,23 @@ function showStatusAlert(message, type = 'info') {
     showConfirmButton: false,
     timer: ALERT_TIMER_MS,
     timerProgressBar: true,
-    ...getSwalThemeOptions(),
   });
+}
+
+async function showConfirmAlert({
+  title,
+  text,
+  confirmButtonText = 'אישור',
+  cancelButtonText = 'ביטול',
+}) {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText,
+    cancelButtonText,
+    reverseButtons: true,
+  });
+  return result.isConfirmed;
 }

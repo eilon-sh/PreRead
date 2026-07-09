@@ -1,0 +1,13 @@
+{
+  "name": "preread-process-document-lambda",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.32.0",
+    "@aws-sdk/client-s3": "^3.883.0",
+    "@aws-sdk/client-secrets-manager": "^3.883.0",
+    "@prisma/client": "^6.19.3",
+    "@toon-format/toon": "^2.3.0"
+  }
+}

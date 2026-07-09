@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Better Auth models ---
-
 model User {
   id            String     @id
   name          String
@@ -70,20 +68,21 @@ model Verification {
   @@map("verification")
 }
 
-// --- App models ---
-
 model Document {
   id               Int       @id @default(autoincrement())
   userId           String
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   filename         String
   processingStatus String    @default("processing")
+  processingError  String?
+  minCefr          String?
+  s3Key            String
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
   processedAt      DateTime?
   words            Word[]
 
   @@index([userId])
+  @@index([s3Key])
   @@map("documents")
 }
 
@@ -98,6 +97,7 @@ model Word {
   translation String?
   flashcard  Flashcard?
 
+  @@unique([documentId, word, cefr])
   @@index([documentId])
   @@index([cefr])
   @@map("words")

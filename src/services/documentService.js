@@ -1,16 +1,8 @@
-import fs from 'node:fs';
+import path from 'node:path';
 import { fileTypeFromBuffer } from 'file-type';
+import config from '#config.js';
 import prisma from '#db/prisma.js';
-import { today } from '#utils/dateUtils.js';
-import { extractWords } from './bedrockService.js';
-import { checkAchievements, getUserStats } from './gameService.js';
-import { pdfToMarkdown } from './pdfService.js';
-
-function wordKey(text) {
-  return String(text || '')
-    .trim()
-    .toLowerCase();
-}
+import { uploadPdfToS3 } from '#services/s3Service.js';
 
 export function getDocumentProcessingState(processingStatus) {
   return {
@@ -18,10 +10,38 @@ export function getDocumentProcessingState(processingStatus) {
   };
 }
 
+function buildDocumentS3Key(userId, filename) {
+  const base = path.basename(filename ?? 'document', '.pdf');
+  const normalized = base.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 80) || 'document';
+  return `${userId}-${Date.now()}-${normalized}.pdf`;
+}
+
+function formatProcessingError(err) {
+  const message = err?.message ?? String(err);
+  return message.replace(/\s+/g, ' ').trim().slice(0, 1000);
+}
+
+export async function markDocumentFailed(documentId, err) {
+  const processingError =
+    typeof err === 'string' ? err.slice(0, 1000) : formatProcessingError(err);
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      processingStatus: 'failed',
+      processingError,
+    },
+  });
+}
+
 export async function failStuckProcessingDocuments() {
   const result = await prisma.document.updateMany({
     where: { processingStatus: 'processing' },
-    data: { processingStatus: 'failed' },
+    data: {
+      processingStatus: 'failed',
+      processingError:
+        'Processing interrupted (server restarted while document was still processing).',
+    },
   });
 
   if (result.count > 0) {
@@ -40,103 +60,18 @@ function mapDocument(d, wordCount) {
     id: d.id,
     user_id: d.userId,
     filename: d.filename,
+    min_cefr: d.minCefr ?? null,
+    s3_key: d.s3Key,
+    s3_bucket: config.s3UploadBucket,
     created_at: d.createdAt.toISOString(),
     processing_status: processingState.status,
+    processing_error: d.processingError ?? null,
     processed_at:
       processingState.status === 'ready'
         ? (d.processedAt?.toISOString() ?? d.createdAt.toISOString())
         : null,
     ...(wordCount !== undefined ? { word_count: wordCount } : {}),
   };
-}
-
-async function saveExtractedWords(documentId, words) {
-  const existingRows = await prisma.word.findMany({
-    where: { documentId },
-    select: { word: true },
-  });
-  const existingKeys = new Set(existingRows.map((row) => wordKey(row.word)));
-
-  const seenInBatch = new Set();
-  const toCreate = [];
-
-  for (const w of words) {
-    const key = wordKey(w.word);
-    if (!key || seenInBatch.has(key) || existingKeys.has(key)) continue;
-
-    seenInBatch.add(key);
-    toCreate.push(w);
-  }
-
-  if (toCreate.length === 0) return;
-
-  await prisma.$transaction(
-    async (tx) => {
-      const createdWords = await tx.word.createManyAndReturn({
-        data: toCreate.map((w) => ({
-          documentId,
-          word: w.word,
-          definition: w.definition,
-          cefr: w.cefr,
-          context: w.context,
-          translation: w.translation,
-        })),
-      });
-
-      await tx.flashcard.createMany({
-        data: createdWords.map((word) => ({
-          wordId: word.id,
-          easeFactor: 2.5,
-          interval: 0,
-          repetitions: 0,
-          nextReview: today(),
-        })),
-      });
-    },
-    { timeout: 30_000 },
-  );
-}
-
-export async function processUploadedDocument({ filePath, documentId, userId, minCefr }) {
-  try {
-    const { markdown, textLength } = await pdfToMarkdown(filePath);
-
-    if (textLength < 10) {
-      console.error(`[document:${documentId}] Processing failed: Could not extract text from PDF`);
-      await prisma.document.update({
-        where: { id: documentId },
-        data: {
-          processingStatus: 'failed',
-        },
-      });
-      return;
-    }
-
-    const words = await extractWords(markdown, minCefr);
-    await saveExtractedWords(documentId, words);
-
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        processingStatus: 'ready',
-        processedAt: new Date(),
-      },
-    });
-    const stats = await getUserStats(userId);
-    await checkAchievements(userId, stats);
-  } catch (err) {
-    console.error(`[document:${documentId}] Processing failed:`, err);
-    await prisma.document.update({
-      where: { id: documentId },
-      data: {
-        processingStatus: 'failed',
-      },
-    });
-  } finally {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-  }
 }
 
 export async function listDocuments(userId) {
@@ -158,34 +93,16 @@ export async function getDocument(userId, id) {
   return mapDocument(doc, doc._count.words);
 }
 
-export async function createDocument(userId, file, minCefr) {
-  if (!file) {
-    throw Object.assign(new Error('PDF file is required'), { status: 400 });
-  }
-
-  const fileBuffer = await fs.promises.readFile(file.path);
-  const detectedType = await fileTypeFromBuffer(fileBuffer);
-
-  if (detectedType?.mime !== 'application/pdf') {
-    fs.unlinkSync(file.path);
-    throw Object.assign(new Error('Uploaded file is not a valid PDF'), {
-      status: 400,
-    });
-  }
-
+export async function createDocumentRecord(userId, uploadData) {
   const doc = await prisma.document.create({
     data: {
       userId,
-      filename: file.originalname,
+      filename: uploadData.filename,
       processingStatus: 'processing',
+      processingError: null,
+      minCefr: uploadData.minCefr || null,
+      s3Key: uploadData.s3Key,
     },
-  });
-
-  void processUploadedDocument({
-    filePath: file.path,
-    documentId: doc.id,
-    userId,
-    minCefr: minCefr || null,
   });
 
   return {
@@ -193,6 +110,32 @@ export async function createDocument(userId, file, minCefr) {
     filename: doc.filename,
     processing_status: 'processing',
     message: 'Document upload accepted and processing started.',
+  };
+}
+
+export async function uploadDocument(userId, { buffer, originalname, minCefr }) {
+  const detectedType = await fileTypeFromBuffer(buffer);
+  if (detectedType?.mime !== 'application/pdf') {
+    throw Object.assign(new Error('Uploaded file is not a valid PDF'), { status: 400 });
+  }
+
+  const s3Key = buildDocumentS3Key(userId, originalname);
+  const result = await createDocumentRecord(userId, {
+    filename: originalname,
+    minCefr,
+    s3Key,
+  });
+
+  try {
+    await uploadPdfToS3({ key: s3Key, buffer });
+  } catch (uploadErr) {
+    await markDocumentFailed(result.id, uploadErr);
+    throw uploadErr;
+  }
+
+  return {
+    ...result,
+    message: 'Document uploaded to S3 and processing started.',
   };
 }
 

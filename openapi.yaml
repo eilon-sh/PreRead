@@ -351,8 +351,9 @@ paths:
       operationId: documents_create
       summary: Upload a PDF document
       description: |
-        Uploads a PDF, extracts vocabulary words, and stores them as flashcards.
-        Maximum file size is 20 MB. Only `application/pdf` is accepted.
+        Uploads a PDF to S3 and starts async vocabulary extraction.
+        The server validates the file is a real PDF (magic bytes), then stores it in S3.
+        Maximum file size is 20 MB.
       security:
         - sessionCookie: []
           csrfToken: []
@@ -368,9 +369,11 @@ paths:
                   type: string
                   format: binary
                   description: PDF file to upload
+                minCefr:
+                  $ref: '#/components/schemas/CefrLevel'
       responses:
-        '201':
-          description: Document uploaded and converted
+        '202':
+          description: Document uploaded and processing started
           content:
             application/json:
               schema:
@@ -1010,6 +1013,10 @@ components:
           type: string
         filename:
           type: string
+        s3_key:
+          type: [string, 'null']
+        s3_bucket:
+          type: [string, 'null']
         created_at:
           type: string
           format: date-time
@@ -1033,6 +1040,10 @@ components:
           type: string
         filename:
           type: string
+        s3_key:
+          type: [string, 'null']
+        s3_bucket:
+          type: [string, 'null']
         created_at:
           type: string
           format: date-time

@@ -1,0 +1,139 @@
+/* Landing page - minimal overrides; layout uses Bootstrap utilities */
+
+.landing-page {
+  background: var(--bg);
+}
+
+.landing-header {
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 60;
+}
+
+[data-theme="dark"] .landing-header {
+  background: var(--nav-glass);
+  border-bottom-color: var(--nav-divider);
+}
+
+.landing-hero {
+  padding: clamp(3rem, 8vw, 5rem) 0;
+  background: radial-gradient(
+    ellipse 900px 380px at 100% 0%,
+    color-mix(in srgb, var(--primary) 14%, transparent),
+    transparent 65%
+  );
+}
+
+.landing-hero h1 {
+  font-size: clamp(2rem, 4.8vw, 3.1rem);
+  line-height: 1.15;
+}
+
+.landing-hero-lead {
+  max-width: 42ch;
+  line-height: 1.75;
+}
+
+.landing-demo-wrap {
+  position: relative;
+}
+
+.landing-demo-glow {
+  position: absolute;
+  top: -2rem;
+  right: -1.5rem;
+  width: 16rem;
+  height: 16rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  filter: blur(70px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.landing-demo-card {
+  position: relative;
+  z-index: 1;
+  width: min(340px, 100%);
+  transform: rotate(2deg);
+  transition: transform 0.25s ease;
+}
+
+.landing-demo-card:hover {
+  transform: rotate(0deg);
+}
+
+.landing-demo-word {
+  direction: ltr;
+}
+
+.landing-demo-ipa {
+  direction: ltr;
+  font-style: italic;
+}
+
+.landing-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.landing-icon-lg {
+  width: 2.75rem;
+  height: 2.75rem;
+  opacity: 0.85;
+}
+
+.landing-section-accent {
+  width: 4rem;
+  height: 5px;
+  background: var(--primary);
+  border-radius: 999px;
+}
+
+.landing-step-num {
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--surface);
+  margin-bottom: 0.75rem;
+}
+
+.landing-cta {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    color-mix(in srgb, var(--primary) 70%, #6366f1) 100%
+  );
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.landing-cta .btn-light {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .landing-demo-card {
+    transform: none;
+  }
+
+  .landing-header .theme-toggle {
+    width: 44px;
+    height: 44px;
+  }
+
+  .landing-hero-lead {
+    overflow-wrap: anywhere;
+  }
+}

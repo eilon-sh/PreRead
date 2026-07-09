@@ -47,7 +47,22 @@
   color: #4f46e5;
 }
 
+.print-preview .print-options {
+  background: #f8f9fb;
+  border-color: #dee2e6;
+  color: #1a1a2e;
+}
+
+.print-preview .print-option-help {
+  color: #6b7280;
+}
+
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   :root,
   [data-theme="dark"] {
     color-scheme: light;
@@ -72,9 +87,42 @@
   }
 
   .print-card {
+    height: 55mm !important;
+    min-height: 55mm !important;
+    max-height: 55mm !important;
+    overflow: hidden !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
     border: 1px dashed #333 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .print-card-content {
+    overflow: hidden !important;
+  }
+
+  .print-grid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-sheet {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 0 !important;
+  }
+
+  .print-sheet-break {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  main,
+  .card,
+  .words-card,
+  .app-container {
+    margin: 0 !important;
   }
 
   .app-nav,
@@ -104,13 +152,5 @@
 
   #wordsTable {
     overflow: visible;
-  }
-
-  .print-sheet {
-    break-after: page;
-  }
-
-  .print-sheet:last-child {
-    break-after: auto;
   }
 }

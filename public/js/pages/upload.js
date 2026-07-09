@@ -120,6 +120,24 @@
     return 'badge badge-info';
   }
 
+  function formatMinCefrLabel(minCefr) {
+    if (!minCefr) return '';
+    const level = String(minCefr).toUpperCase();
+    const labels = {
+      B1: 'B1 ומעלה',
+      B2: 'B2 ומעלה',
+      C1: 'C1 ומעלה',
+      C2: 'C2 בלבד',
+    };
+    return labels[level] || level;
+  }
+
+  function renderMinCefrBadge(minCefr) {
+    const label = formatMinCefrLabel(minCefr);
+    if (!label) return '';
+    return `<span class="badge text-bg-secondary">${escapeHtml(label)}</span>`;
+  }
+
   function renderDocuments(docs = []) {
     const mergedDocs = [...Array.from(localUploadingDocs.values()), ...docs];
 
@@ -133,7 +151,8 @@
         const status = d.processing_status || 'ready';
         const isReady = status === 'ready';
         const hasNoWords = isReady && (d.word_count || 0) === 0;
-        const canDelete = status !== 'processing' && !String(d.id).startsWith('local-');
+        const isFailed = status === 'failed';
+        const canDelete = isFailed && !String(d.id).startsWith('local-');
         const canOpenWords = isReady && !hasNoWords;
         const isProcessing = status === 'processing' || status === 'uploading';
 
@@ -149,6 +168,16 @@
                  <rect x="2" y="6" width="20" height="12" rx="2"/>
                </svg>
                <span>התחל משחק</span>
+             </a>`
+          : '';
+
+        const studyBtnHtml = canOpenWords
+          ? `<a href="/study?documentId=${d.id}" class="btn btn-primary doc-action-btn doc-study-btn" title="התחל לימוד" aria-label="התחל לימוד">
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+               </svg>
+               <span>התחל לימוד</span>
              </a>`
           : '';
 
@@ -175,10 +204,12 @@
             <div class="doc-meta d-flex flex-wrap gap-2 mt-2">
               <span class="${getStatusBadgeClass(status)}">${getDocumentStatusLabel(status)}</span>
               <span class="badge text-bg-secondary">${d.word_count || 0} מילים</span>
+              ${renderMinCefrBadge(d.min_cefr)}
               ${statusNoteHtml}
             </div>
           </div>
           <div class="doc-header-actions d-flex align-items-center gap-2">
+            ${studyBtnHtml}
             ${gamesBtnHtml}
             ${deleteBtnHtml}
           </div>
@@ -196,7 +227,12 @@
     const docId = deleteBtn.dataset.docId;
     const docName =
       deleteBtn.closest('.doc-card')?.querySelector('.doc-name')?.textContent?.trim() || 'המסמך';
-    const shouldDelete = confirm(`למחוק את "${docName}"?`);
+    const shouldDelete = await showConfirmAlert({
+      title: 'מחיקת מסמך',
+      text: `למחוק את "${docName}"?`,
+      confirmButtonText: 'מחק',
+      cancelButtonText: 'ביטול',
+    });
     if (!shouldDelete) return;
 
     deleteBtn.disabled = true;
@@ -261,17 +297,19 @@
     btn.disabled = true;
 
     const localId = `local-${Date.now()}`;
+    const minCefr = document.getElementById('minCefr').value || '';
     localUploadingDocs.set(localId, {
       id: localId,
       filename: file.name,
       word_count: 0,
+      min_cefr: minCefr || null,
       processing_status: 'uploading',
     });
     renderDocuments(cachedDocuments);
 
     const formData = new FormData();
     formData.append('pdf', file);
-    formData.append('minCefr', document.getElementById('minCefr').value || '');
+    formData.append('minCefr', minCefr);
 
     try {
       const uploadRes = await apiFetch('/api/v1/documents', {
