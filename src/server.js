@@ -81,9 +81,15 @@ app.get('/reset-password', (req, res) => {
 app.use(requireAuth);
 
 app.get('/upload', (_req, res) => res.render('upload'));
-app.get('/words', (_req, res) => res.render('words'));
+app.get('/words', (req, res) => {
+  if (!req.query.documentId) return res.redirect('/upload');
+  res.render('words');
+});
 app.get('/study', (_req, res) => res.render('study'));
-app.get('/games', (_req, res) => res.render('games'));
+app.get('/games', (req, res) => {
+  if (!req.query.documentId) return res.redirect('/upload');
+  res.render('games');
+});
 app.get('/profile', (_req, res) => res.render('profile'));
 app.get('/achievements', (_req, res) => res.render('achievements'));
 

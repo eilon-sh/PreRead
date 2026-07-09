@@ -1,9 +1,37 @@
+import path from 'node:path';
+import { fileTypeFromBuffer } from 'file-type';
+import config from '#config.js';
 import prisma from '#db/prisma.js';
+import { uploadPdfToS3 } from '#services/s3Service.js';
 
 export function getDocumentProcessingState(processingStatus) {
   return {
     status: processingStatus,
   };
+}
+
+function buildDocumentS3Key(userId, filename) {
+  const base = path.basename(filename ?? 'document', '.pdf');
+  const normalized = base.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 80) || 'document';
+  return `${userId}-${Date.now()}-${normalized}.pdf`;
+}
+
+function formatProcessingError(err) {
+  const message = err?.message ?? String(err);
+  return message.replace(/\s+/g, ' ').trim().slice(0, 1000);
+}
+
+export async function markDocumentFailed(documentId, err) {
+  const processingError =
+    typeof err === 'string' ? err.slice(0, 1000) : formatProcessingError(err);
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: {
+      processingStatus: 'failed',
+      processingError,
+    },
+  });
 }
 
 export async function failStuckProcessingDocuments() {
@@ -33,7 +61,8 @@ function mapDocument(d, wordCount) {
     user_id: d.userId,
     filename: d.filename,
     min_cefr: d.minCefr ?? null,
-    s3_key: d.s3Key ?? null,
+    s3_key: d.s3Key,
+    s3_bucket: config.s3UploadBucket,
     created_at: d.createdAt.toISOString(),
     processing_status: processingState.status,
     processing_error: d.processingError ?? null,
@@ -81,6 +110,32 @@ export async function createDocumentRecord(userId, uploadData) {
     filename: doc.filename,
     processing_status: 'processing',
     message: 'Document upload accepted and processing started.',
+  };
+}
+
+export async function uploadDocument(userId, { buffer, originalname, minCefr }) {
+  const detectedType = await fileTypeFromBuffer(buffer);
+  if (detectedType?.mime !== 'application/pdf') {
+    throw Object.assign(new Error('Uploaded file is not a valid PDF'), { status: 400 });
+  }
+
+  const s3Key = buildDocumentS3Key(userId, originalname);
+  const result = await createDocumentRecord(userId, {
+    filename: originalname,
+    minCefr,
+    s3Key,
+  });
+
+  try {
+    await uploadPdfToS3({ key: s3Key, buffer });
+  } catch (uploadErr) {
+    await markDocumentFailed(result.id, uploadErr);
+    throw uploadErr;
+  }
+
+  return {
+    ...result,
+    message: 'Document uploaded to S3 and processing started.',
   };
 }
 

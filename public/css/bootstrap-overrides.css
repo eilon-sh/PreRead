@@ -209,6 +209,20 @@
   --bs-alert-color: var(--error);
 }
 
+.swal2-icon.swal2-success {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: var(--success);
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-circular-line'],
+.swal2-icon.swal2-success .swal2-success-fix {
+  background-color: var(--surface) !important;
+}
+
 .game-card,
 .match-item,
 .quiz-option,

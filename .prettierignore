@@ -1,0 +1,7 @@
+node_modules/
+uploads/
+.env
+package-lock.json
+public/vendor/
+.cursor/
+prisma/migrations/

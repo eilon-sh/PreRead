@@ -46,20 +46,11 @@
 
 [data-theme="dark"] .table-hover > tbody > tr:hover > * {
   --bs-table-bg-state: color-mix(in srgb, var(--primary) 18%, var(--surface-3));
-  color: var(--text);
-  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 [data-theme="dark"] .words-table {
   --bs-table-hover-bg: color-mix(in srgb, var(--primary) 22%, var(--surface-3));
   --bs-table-hover-color: var(--text);
-}
-
-[data-theme="dark"] .words-table.table-hover > tbody > tr:hover > * {
-  --bs-table-bg-state: color-mix(in srgb, var(--primary) 22%, var(--surface-3));
-  background-color: color-mix(in srgb, var(--primary) 22%, var(--surface-3)) !important;
-  color: var(--text);
-  box-shadow: inset 3px 0 0 var(--primary);
 }
 
 [data-theme="dark"] .badge.text-bg-secondary {
@@ -147,18 +138,26 @@
   color: #fecaca;
 }
 
-[data-theme="dark"] .swal-dark-popup {
+[data-theme="dark"] .swal2-popup {
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border-strong);
 }
 
-[data-theme="dark"] .swal-dark-title {
+[data-theme="dark"] .swal2-title {
   color: var(--text);
 }
 
-[data-theme="dark"] .swal-dark-text {
+[data-theme="dark"] .swal2-html-container {
   color: var(--muted);
+}
+
+[data-theme="dark"] .swal2-timer-progress-bar-container {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .swal2-timer-progress-bar {
+  background: var(--primary);
 }
 
 [data-theme="dark"] .xp-toast {

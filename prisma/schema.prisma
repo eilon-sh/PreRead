@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- Better Auth models ---
-
 model User {
   id            String     @id
   name          String
@@ -70,8 +68,6 @@ model Verification {
   @@map("verification")
 }
 
-// --- App models ---
-
 model Document {
   id               Int       @id @default(autoincrement())
   userId           String
@@ -80,10 +76,8 @@ model Document {
   processingStatus String    @default("processing")
   processingError  String?
   minCefr          String?
-  s3Key            String?
-  contentType      String?
+  s3Key            String
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
   processedAt      DateTime?
   words            Word[]
 
