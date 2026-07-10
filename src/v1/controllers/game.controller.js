@@ -1,8 +1,4 @@
-import {
-  getLeaderboard as fetchLeaderboard,
-  getAchievements,
-  getUserStats,
-} from '#services/gameService.js';
+import { getAchievements, getUserStats } from '#services/gameService.js';
 
 export async function getProfile(req, res) {
   const stats = await getUserStats(req.user.id);
@@ -22,8 +18,4 @@ export async function getProfile(req, res) {
 
 export async function getAchievementsHandler(req, res) {
   res.json(await getAchievements(req.user.id));
-}
-
-export async function getLeaderboard(_req, res) {
-  res.json(await fetchLeaderboard(10));
 }

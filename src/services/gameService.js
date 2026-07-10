@@ -192,29 +192,3 @@ export async function getAchievements(userId) {
     }))
     .sort((a, b) => b.unlocked - a.unlocked || a.id - b.id);
 }
-
-export async function getLeaderboard(limit = 10) {
-  const stats = await prisma.userStats.findMany({
-    orderBy: { xp: 'desc' },
-    take: limit,
-  });
-
-  if (stats.length === 0) return [];
-
-  const userIds = stats.map((s) => s.userId);
-  const counts = await prisma.userAchievement.groupBy({
-    by: ['userId'],
-    where: { userId: { in: userIds } },
-    _count: { achievementId: true },
-  });
-  const countMap = Object.fromEntries(counts.map((c) => [c.userId, c._count.achievementId]));
-
-  return stats.map((s) => ({
-    user_id: s.userId,
-    xp: s.xp,
-    level: s.level,
-    current_streak: s.currentStreak,
-    mastered_words: s.masteredWords,
-    achievement_count: countMap[s.userId] ?? 0,
-  }));
-}

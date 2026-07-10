@@ -64,7 +64,7 @@
   }
 
   :root,
-  [data-theme="dark"] {
+  [data-theme='dark'] {
     color-scheme: light;
   }
 

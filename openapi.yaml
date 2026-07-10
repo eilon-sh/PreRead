@@ -60,7 +60,7 @@ tags:
       SM-2 spaced-repetition flashcard reviews.
       Intervals use ceil (round up) per the original algorithm.
   - name: game
-    description: User profile, achievements, and leaderboard
+    description: User profile and achievements
   - name: minigames
     description: Vocabulary minigames and XP rewards
 
@@ -353,7 +353,7 @@ paths:
       description: |
         Uploads a PDF to S3 and starts async vocabulary extraction.
         The server validates the file is a real PDF (magic bytes), then stores it in S3.
-        Maximum file size is 20 MB.
+        Maximum file size is 10 MB.
       security:
         - sessionCookie: []
           csrfToken: []
@@ -459,25 +459,6 @@ paths:
                 $ref: '#/components/schemas/WordListResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  /api/v1/words/{id}:
-    get:
-      tags: [words]
-      operationId: words_get
-      summary: Get word by ID
-      parameters:
-        - $ref: '#/components/parameters/WordId'
-      responses:
-        '200':
-          description: Word details with flashcard state
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WordDetail'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   /api/v1/reviews/due:
     get:
@@ -616,24 +597,6 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /api/v1/game/leaderboard:
-    get:
-      tags: [game]
-      operationId: game_leaderboard_get
-      summary: Get XP leaderboard
-      description: Returns the top 10 users ranked by XP.
-      responses:
-        '200':
-          description: Leaderboard entries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LeaderboardEntry'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
   /api/v1/minigames/words:
     get:
       tags: [minigames]
@@ -653,6 +616,7 @@ paths:
             type: integer
             default: 20
             minimum: 1
+            maximum: 50
       responses:
         '200':
           description: Game words
@@ -721,13 +685,6 @@ components:
       schema:
         type: integer
       description: Document ID
-    WordId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-      description: Word ID
     ResetToken:
       name: token
       in: path
@@ -1140,14 +1097,6 @@ components:
         interval:
           type: [integer, 'null']
 
-    WordDetail:
-      allOf:
-        - $ref: '#/components/schemas/WordSummary'
-        - type: object
-          properties:
-            ease_factor:
-              type: [number, 'null']
-
     WordListResponse:
       type: object
       required: [words, total]
@@ -1436,29 +1385,6 @@ components:
               items:
                 $ref: '#/components/schemas/Achievement'
 
-    LeaderboardEntry:
-      type: object
-      required:
-        - user_id
-        - xp
-        - level
-        - current_streak
-        - mastered_words
-        - achievement_count
-      properties:
-        user_id:
-          type: string
-        xp:
-          type: integer
-        level:
-          type: integer
-        current_streak:
-          type: integer
-        mastered_words:
-          type: integer
-        achievement_count:
-          type: integer
-
     MinigameWord:
       type: object
       required: [id, word, definition, cefr]
@@ -1500,11 +1426,13 @@ components:
       required: [correct, total, gameType]
       properties:
         correct:
-          type: number
+          type: integer
           minimum: 0
+          maximum: 100
         total:
-          type: number
+          type: integer
           minimum: 1
+          maximum: 100
         gameType:
           $ref: '#/components/schemas/MinigameType'
 

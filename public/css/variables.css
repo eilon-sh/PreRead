@@ -37,7 +37,7 @@
   --bs-link-hover-color: var(--primary-hover);
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   color-scheme: dark;
   --bg: #090b10;
   --surface: #141820;

@@ -13,6 +13,7 @@ function shuffle(arr) {
 }
 
 export async function getGameWords(userId, { cefr, documentId, limit = 20 } = {}) {
+  const take = Math.min(Math.max(limit * 5, limit), 200);
   const words = await prisma.word.findMany({
     where: {
       document: {
@@ -29,6 +30,7 @@ export async function getGameWords(userId, { cefr, documentId, limit = 20 } = {}
       context: true,
       cefr: true,
     },
+    take,
   });
 
   return shuffle(words).slice(0, Math.min(limit, words.length));

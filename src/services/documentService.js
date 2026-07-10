@@ -3,6 +3,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import config from '#config.js';
 import prisma from '#db/prisma.js';
 import { uploadPdfToS3 } from '#services/s3Service.js';
+import { decodeUploadedFilename } from '#utils/filenameUtils.js';
 
 export function getDocumentProcessingState(processingStatus) {
   return {
@@ -22,8 +23,7 @@ function formatProcessingError(err) {
 }
 
 export async function markDocumentFailed(documentId, err) {
-  const processingError =
-    typeof err === 'string' ? err.slice(0, 1000) : formatProcessingError(err);
+  const processingError = typeof err === 'string' ? err.slice(0, 1000) : formatProcessingError(err);
 
   await prisma.document.update({
     where: { id: documentId },
@@ -59,7 +59,7 @@ function mapDocument(d, wordCount) {
   return {
     id: d.id,
     user_id: d.userId,
-    filename: d.filename,
+    filename: decodeUploadedFilename(d.filename),
     min_cefr: d.minCefr ?? null,
     s3_key: d.s3Key,
     s3_bucket: config.s3UploadBucket,
@@ -107,7 +107,7 @@ export async function createDocumentRecord(userId, uploadData) {
 
   return {
     id: doc.id,
-    filename: doc.filename,
+    filename: decodeUploadedFilename(doc.filename),
     processing_status: 'processing',
     message: 'Document upload accepted and processing started.',
   };
@@ -119,9 +119,10 @@ export async function uploadDocument(userId, { buffer, originalname, minCefr }) 
     throw Object.assign(new Error('Uploaded file is not a valid PDF'), { status: 400 });
   }
 
-  const s3Key = buildDocumentS3Key(userId, originalname);
+  const filename = decodeUploadedFilename(originalname);
+  const s3Key = buildDocumentS3Key(userId, filename);
   const result = await createDocumentRecord(userId, {
-    filename: originalname,
+    filename,
     minCefr,
     s3Key,
   });

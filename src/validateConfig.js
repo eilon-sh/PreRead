@@ -25,9 +25,7 @@ export function validateProductionConfig(config) {
     errors.push('AWS_REGION is required in production');
   }
 
-  if (!process.env.AWS_ACCESS_KEY_ID && !process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI) {
-    errors.push('AWS_ACCESS_KEY_ID is required in production (or run on AWS with an IAM role)');
-  }
+  // AWS SDK uses the default credential chain (env keys, ECS, EC2 instance profile via IMDS).
 
   if (errors.length > 0) {
     throw new Error(`Production configuration errors:\n- ${errors.join('\n- ')}`);

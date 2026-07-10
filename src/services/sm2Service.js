@@ -87,26 +87,6 @@ export function calculateSm2(card, quality) {
 }
 
 /**
- * Create a new flashcard for a vocabulary word with SM-2 initial state.
- *
- * New cards start with EF = 2.5, interval = 0, repetitions = 0, and are due immediately.
- *
- * @param {number} wordId - ID of the parent Word record
- * @returns {Promise<import('@prisma/client').Flashcard>}
- */
-export async function createFlashcard(wordId) {
-  return prisma.flashcard.create({
-    data: {
-      wordId,
-      easeFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      nextReview: today(),
-    },
-  });
-}
-
-/**
  * Map a Prisma flashcard (with word + document) to the API response shape.
  *
  * @param {object} f - Flashcard row with nested word and document
@@ -159,58 +139,6 @@ export async function getDueCards({ userId, documentId, limit = 50 } = {}) {
   });
 
   return cards.map(mapDueCard);
-}
-
-/**
- * Load a flashcard by ID, scoped to the owning user.
- *
- * @param {number} flashcardId
- * @param {string} userId
- * @returns {Promise<import('@prisma/client').Flashcard>}
- * @throws {Error} If the card does not exist or does not belong to the user
- */
-export async function reviewCard(flashcardId, userId) {
-  const card = await prisma.flashcard.findFirst({
-    where: {
-      id: flashcardId,
-      word: { document: { userId } },
-    },
-  });
-
-  if (!card) {
-    throw new Error('Flashcard not found');
-  }
-  return card;
-}
-
-/**
- * Apply an SM-2 review and persist the updated scheduling fields.
- *
- * @param {number} flashcardId
- * @param {number} quality - Recall quality on the 0–5 SM-2 scale
- * @param {import('@prisma/client').Flashcard} [existingCard] - Pre-loaded card to skip a DB read
- * @returns {Promise<object>} Updated card fields in API response format
- * @throws {Error} If the card does not exist
- */
-export async function applyReview(flashcardId, quality, existingCard) {
-  const card = existingCard ?? (await prisma.flashcard.findUnique({ where: { id: flashcardId } }));
-  if (!card) throw new Error('Flashcard not found');
-
-  const updated = calculateSm2(card, quality);
-  const result = await prisma.flashcard.update({
-    where: { id: flashcardId },
-    data: updated,
-  });
-
-  return {
-    ...card,
-    ease_factor: result.easeFactor,
-    interval: result.interval,
-    repetitions: result.repetitions,
-    next_review: result.nextReview,
-    last_reviewed: result.lastReviewed,
-    quality,
-  };
 }
 
 /**

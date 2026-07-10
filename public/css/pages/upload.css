@@ -220,8 +220,6 @@ a.doc-name:focus {
   .file-input-wrap .file-name {
     width: 100%;
     text-align: right;
-    overflow-wrap: anywhere;
-    white-space: normal;
   }
 
   .upload-actions {

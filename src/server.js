@@ -17,6 +17,7 @@ import {
   csrfProtection,
   helmetMiddleware,
   hppMiddleware,
+  passwordResetEmailLimiter,
 } from '#middleware/security.js';
 import { failStuckProcessingDocuments } from '#services/documentService.js';
 import v1Router from '#v1/routes/index.js';
@@ -42,6 +43,7 @@ app.use(cookieParser());
 app.use(hppMiddleware);
 
 // Better Auth must be mounted before express.json()
+app.post('/api/auth/request-password-reset', passwordResetEmailLimiter, toNodeHandler(auth));
 app.all('/api/auth/{*splat}', authLimiter, toNodeHandler(auth));
 
 app.set('view engine', 'ejs');

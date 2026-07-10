@@ -1,5 +1,10 @@
 body {
-  font-family: "Heebo", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family:
+    'Heebo',
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -84,17 +89,17 @@ h1 {
   z-index: 50;
 }
 
-[data-theme="light"] .theme-icon-dark,
-[data-theme="dark"] .theme-icon-light {
+[data-theme='light'] .theme-icon-dark,
+[data-theme='dark'] .theme-icon-light {
   display: none;
 }
 
-[data-theme="dark"] .theme-toggle {
+[data-theme='dark'] .theme-toggle {
   background: var(--nav-elevated);
   border-color: var(--nav-divider);
 }
 
-[data-theme="dark"] .theme-toggle:hover {
+[data-theme='dark'] .theme-toggle:hover {
   background: var(--nav-link-hover-bg);
 }
 

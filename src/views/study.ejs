@@ -20,11 +20,15 @@
       <h1 class="h3">לימוד עם SM-2</h1>
       <p class="subtitle text-muted">פלאשקארדים עם חזרה מרווחת - דרג את הידע שלך</p>
 
-      <section class="card mb-4 stats-bar text-center" id="statsBar">
-        <div class="card-body d-flex flex-wrap align-items-center justify-content-center gap-2">
-          <span id="dueCount">טוען...</span>
-          <span id="gameStats" class="game-stats-mini"></span>
-          <button class="btn btn-secondary btn-sm" id="reloadBtn" type="button">רענן</button>
+      <section class="study-stats mb-4" id="statsBar">
+        <div class="study-stats-row">
+          <div class="study-stats-group" id="dueCount">
+            <span class="study-stat-chip study-stat-loading">טוען...</span>
+          </div>
+          <div class="study-stats-group" id="gameStats"></div>
+          <button class="btn btn-secondary btn-sm study-stats-reload" id="reloadBtn" type="button">
+            רענן
+          </button>
         </div>
       </section>
 

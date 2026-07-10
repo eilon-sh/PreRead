@@ -16,13 +16,28 @@
     const stats = await reviewRes.json();
     const profile = await profileRes.json();
     dueCount.innerHTML = `
-      <strong>${stats.dueToday}</strong> כרטיסים ממתינים היום
-      מתוך <strong>${stats.total}</strong> סה"כ
+      <span class="study-stat-chip">
+        <span class="study-stat-value">${stats.dueToday}</span>
+        <span class="study-stat-label">ממתינים היום</span>
+      </span>
+      <span class="study-stat-chip">
+        <span class="study-stat-value">${stats.total}</span>
+        <span class="study-stat-label">סה״כ</span>
+      </span>
     `;
     document.getElementById('gameStats').innerHTML = `
-      רמה <strong>${profile.stats.level}</strong> ·
-      <strong>${profile.stats.xp}</strong> XP ·
-      🔥 ${profile.stats.current_streak}
+      <span class="study-stat-chip">
+        <span class="study-stat-value">${profile.stats.level}</span>
+        <span class="study-stat-label">רמה</span>
+      </span>
+      <span class="study-stat-chip study-stat-chip--xp">
+        <span class="study-stat-value">${profile.stats.xp}</span>
+        <span class="study-stat-label">XP</span>
+      </span>
+      <span class="study-stat-chip">
+        <span class="study-stat-value">${profile.stats.current_streak}</span>
+        <span class="study-stat-label">רצף</span>
+      </span>
     `;
   }
 
@@ -121,16 +136,47 @@
     document.querySelectorAll('.rate-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const quality = parseInt(btn.dataset.q, 10);
-        const res = await apiFetch(`/api/v1/reviews/${card.flashcard_id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quality }),
+        const rateButtons = document.querySelectorAll('.rate-btn');
+        const rateLabel = document.querySelector('.rate-label');
+
+        rateButtons.forEach((b) => {
+          b.disabled = true;
+          b.classList.remove('rate-btn--pending');
         });
-        const data = await res.json();
-        if (data.game) showXpToast(data.game);
-        currentIndex++;
-        revealed = false;
-        renderCard();
+        btn.classList.add('rate-btn--pending');
+        if (rateLabel) rateLabel.textContent = 'שולח תשובה...';
+
+        try {
+          const res = await apiFetch(`/api/v1/reviews/${card.flashcard_id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quality }),
+          });
+          if (isRateLimited(res)) {
+            if (rateLabel) rateLabel.textContent = 'עד כמה ידעת?';
+            rateButtons.forEach((b) => {
+              b.disabled = false;
+              b.classList.remove('rate-btn--pending');
+            });
+            return;
+          }
+          if (!res.ok) {
+            throw new Error('review failed');
+          }
+          const data = await res.json();
+          if (rateLabel) rateLabel.textContent = 'נשלח!';
+          if (data.game) showXpToast(data.game);
+          currentIndex++;
+          revealed = false;
+          renderCard();
+        } catch {
+          if (rateLabel) rateLabel.textContent = 'עד כמה ידעת?';
+          rateButtons.forEach((b) => {
+            b.disabled = false;
+            b.classList.remove('rate-btn--pending');
+          });
+          showStatusAlert('השליחה נכשלה. בדוק את החיבור ונסה שוב.', 'error');
+        }
       });
     });
   }

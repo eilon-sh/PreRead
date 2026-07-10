@@ -102,7 +102,7 @@
       fileNameEl.title = '';
       return;
     }
-    fileNameEl.textContent = truncateFilename(file.name, 40);
+    fileNameEl.textContent = truncateFilename(file.name, 80);
     fileNameEl.title = file.name;
   });
 
@@ -156,9 +156,10 @@
         const canOpenWords = isReady && !hasNoWords;
         const isProcessing = status === 'processing' || status === 'uploading';
 
+        const displayName = truncateFilename(d.filename, 80);
         const docNameHtml = canOpenWords
-          ? `<a class="doc-name d-block" href="/words?documentId=${d.id}" title="${escapeHtml(d.filename)}">${escapeHtml(d.filename)}</a>`
-          : `<strong class="doc-name d-block" title="${escapeHtml(d.filename)}">${escapeHtml(d.filename)}</strong>`;
+          ? `<a class="doc-name d-block" href="/words?documentId=${d.id}" title="${escapeHtml(d.filename)}">${escapeHtml(displayName)}</a>`
+          : `<strong class="doc-name d-block" title="${escapeHtml(d.filename)}">${escapeHtml(displayName)}</strong>`;
 
         const gamesBtnHtml = canOpenWords
           ? `<a href="/games?documentId=${d.id}" class="btn btn-sm btn-outline-primary doc-action-btn" title="התחל משחק" aria-label="התחל משחק">
@@ -318,6 +319,8 @@
       });
       const uploadData = await uploadRes.json();
       if (isRateLimited(uploadRes)) {
+        localUploadingDocs.delete(localId);
+        renderDocuments(cachedDocuments);
         return;
       }
       if (!uploadRes.ok) throw new Error(uploadData.error);

@@ -18,6 +18,9 @@ export const auth = betterAuth({
   secret: config.betterAuthSecret,
   baseURL: config.betterAuthUrl,
   trustedOrigins: [config.betterAuthUrl],
+  advanced: {
+    useSecureCookies: config.isHttps,
+  },
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {

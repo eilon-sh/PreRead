@@ -20,8 +20,9 @@
 12. [AWS CloudFormation](#12-aws-cloudformation)
 13. [משתני סביבה](#13-משתני-סביבה)
 14. [תהליך Deploy](#14-תהליך-deploy)
-15. [אבחון ופתרון תקלות](#15-אבחון-ופתרון-תקלות)
-16. [עלות ואבטחה](#16-עלות-ואבטחה)
+15. [פריסת האפליקציה ל-EC2](#15-פריסת-האפליקציה-ל-ec2)
+16. [אבחון ופתרון תקלות](#16-אבחון-ופתרון-תקלות)
+17. [עלות ואבטחה](#17-עלות-ואבטחה)
 
 ---
 
@@ -78,14 +79,14 @@ flowchart LR
 
 ### משאבים ב-CloudFormation (`infra/template.yaml`)
 
-| Logical ID | סוג AWS | שם פיזי / ברירת מחדל |
-|---|---|---|
-| `UploadQueue` | `AWS::SQS::Queue` | `preread-docs-UploadQueue-XXXXX` |
-| `UploadQueuePolicy` | `AWS::SQS::QueuePolicy` | — |
-| `UploadBucket` | `AWS::S3::Bucket` | `preread-uploads-{AccountId}-{region}` |
-| `ProcessDocumentRole` | `AWS::IAM::Role` | `preread-docs-ProcessDocumentRole-XXXXX` |
-| `ProcessDocumentFunction` | `AWS::Lambda::Function` | `preread-process-document` |
-| `ProcessDocumentEventSource` | `AWS::Lambda::EventSourceMapping` | UUID אוטומטי |
+| Logical ID                   | סוג AWS                           | שם פיזי / ברירת מחדל                     |
+| ---------------------------- | --------------------------------- | ---------------------------------------- |
+| `UploadQueue`                | `AWS::SQS::Queue`                 | `preread-docs-UploadQueue-XXXXX`         |
+| `UploadQueuePolicy`          | `AWS::SQS::QueuePolicy`           | —                                        |
+| `UploadBucket`               | `AWS::S3::Bucket`                 | `preread-uploads-{AccountId}-{region}`   |
+| `ProcessDocumentRole`        | `AWS::IAM::Role`                  | `preread-docs-ProcessDocumentRole-XXXXX` |
+| `ProcessDocumentFunction`    | `AWS::Lambda::Function`           | `preread-process-document`               |
+| `ProcessDocumentEventSource` | `AWS::Lambda::EventSourceMapping` | UUID אוטומטי                             |
 
 > **חשוב:** **RDS** אינו חלק מה-stack — יוצרים אותו בנפרד. ה-deploy script מסנכרן את `DATABASE_URL` ל-Secrets Manager.
 
@@ -101,20 +102,20 @@ preread-docs
 
 ### חשבון AWS
 
-| דרישה | פירוט |
-|---|---|
-| חשבון AWS פעיל | עם הרשאות ליצור S3, SQS, Lambda, IAM, Secrets Manager, Bedrock |
-| Region | **`us-east-1`** (ברירת מחדל בפרויקט) |
-| IAM User / Role לפיתוח | עם `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` ב-`.env` |
+| דרישה                  | פירוט                                                          |
+| ---------------------- | -------------------------------------------------------------- |
+| חשבון AWS פעיל         | עם הרשאות ליצור S3, SQS, Lambda, IAM, Secrets Manager, Bedrock |
+| Region                 | **`us-east-1`** (ברירת מחדל בפרויקט)                           |
+| IAM User / Role לפיתוח | עם `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` ב-`.env`      |
 
 ### כלים מקומיים
 
-| כלי | שימוש |
-|---|---|
-| **Node.js** 22+ | הרצת האפליקציה וסקריפטי deploy |
-| **npm** | `npm install` בשורש וב-`infra/` |
-| **AWS CLI** (אופציונלי) | אבחון ידני, בדיקות |
-| **Prisma CLI** | מיגרציות DB: `npm run db:migrate` |
+| כלי                     | שימוש                             |
+| ----------------------- | --------------------------------- |
+| **Node.js** 22+         | הרצת האפליקציה וסקריפטי deploy    |
+| **npm**                 | `npm install` בשורש וב-`infra/`   |
+| **AWS CLI** (אופציונלי) | אבחון ידני, בדיקות                |
+| **Prisma CLI**          | מיגרציות DB: `npm run db:migrate` |
 
 ### התקנת תלויות infra
 
@@ -178,9 +179,9 @@ S3_UPLOAD_BUCKET=   # ימולא אחרי deploy ראשון
 
 שני buckets:
 
-| Bucket | שם (ברירת מחדל) | מטרה |
-|---|---|---|
-| **Upload Bucket** | `preread-uploads-{AccountId}-us-east-1` | אחסון PDF שהמשתמשים מעלים |
+| Bucket               | שם (ברירת מחדל)                           | מטרה                                                         |
+| -------------------- | ----------------------------------------- | ------------------------------------------------------------ |
+| **Upload Bucket**    | `preread-uploads-{AccountId}-us-east-1`   | אחסון PDF שהמשתמשים מעלים                                    |
 | **Artifacts Bucket** | `preread-artifacts-{AccountId}-us-east-1` | zip של קוד Lambda (לא ב-CFN template — נוצר ב-deploy script) |
 
 ### זרימת העלאה
@@ -243,28 +244,28 @@ UploadBucket:
 
 ### IAM — מי צריך גישה?
 
-| שירות / אפליקציה | פעולות | Resource |
-|---|---|---|
-| Express App (משתמש IAM) | `s3:PutObject` | `arn:aws:s3:::preread-uploads-*/*` |
-| Lambda `ProcessDocumentRole` | `s3:GetObject` | `arn:aws:s3:::preread-uploads-*/*` |
-| Deploy script | `s3:CreateBucket`, `s3:PutObject`, `s3:HeadBucket` | artifacts bucket |
+| שירות / אפליקציה             | פעולות                                             | Resource                           |
+| ---------------------------- | -------------------------------------------------- | ---------------------------------- |
+| Express App (משתמש IAM)      | `s3:PutObject`                                     | `arn:aws:s3:::preread-uploads-*/*` |
+| Lambda `ProcessDocumentRole` | `s3:GetObject`                                     | `arn:aws:s3:::preread-uploads-*/*` |
+| Deploy script                | `s3:CreateBucket`, `s3:PutObject`, `s3:HeadBucket` | artifacts bucket                   |
 
 ### ערכי תצורה חשובים
 
-| פרמטר | ערך |
-|---|---|
-| Event | `s3:ObjectCreated:Put` בלבד (לא multipart complete בנפרד — `PutObject` מספיק) |
-| Content-Type בהעלאה | `application/pdf` |
-| `S3_UPLOAD_BUCKET` ב-`.env` | חייב להתאים לשם ה-bucket בפועל |
+| פרמטר                       | ערך                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| Event                       | `s3:ObjectCreated:Put` בלבד (לא multipart complete בנפרד — `PutObject` מספיק) |
+| Content-Type בהעלאה         | `application/pdf`                                                             |
+| `S3_UPLOAD_BUCKET` ב-`.env` | חייב להתאים לשם ה-bucket בפועל                                                |
 
 ### מלכודות נפוצות
 
-| בעיה | סיבה | פתרון |
-|---|---|---|
-| העלאה עובדת אבל Lambda לא רצה | אין event notification או Queue Policy חסר | ודאו `DependsOn: UploadQueuePolicy` לפני ה-bucket ב-CFN |
-| `Access Denied` בהעלאה מהאפליקציה | ל-IAM user חסר `s3:PutObject` | הוסיפו policy ל-user |
-| שם bucket תפוס | שמות S3 גלובליים | שנו את `UploadBucketName` / `S3_UPLOAD_BUCKET` |
-| Circular dependency ב-CFN | שימוש ב-`!GetAtt UploadBucket.Arn` ב-Queue Policy | הפרויקט משתמש ב-`!Sub 'arn:aws:s3:::${UploadBucketName}'` — שמרו על כך |
+| בעיה                              | סיבה                                              | פתרון                                                                  |
+| --------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- |
+| העלאה עובדת אבל Lambda לא רצה     | אין event notification או Queue Policy חסר        | ודאו `DependsOn: UploadQueuePolicy` לפני ה-bucket ב-CFN                |
+| `Access Denied` בהעלאה מהאפליקציה | ל-IAM user חסר `s3:PutObject`                     | הוסיפו policy ל-user                                                   |
+| שם bucket תפוס                    | שמות S3 גלובליים                                  | שנו את `UploadBucketName` / `S3_UPLOAD_BUCKET`                         |
+| Circular dependency ב-CFN         | שימוש ב-`!GetAtt UploadBucket.Arn` ב-Queue Policy | הפרויקט משתמש ב-`!Sub 'arn:aws:s3:::${UploadBucketName}'` — שמרו על כך |
 
 ---
 
@@ -342,10 +343,10 @@ const s3Record = body.Records[0];
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
-| הודעות נתקעות ב-In Flight | הגדילו `VisibilityTimeout` או קצרו עיבוד Lambda |
-| הודעות ב-DLQ (אם הוגדר) | בדקו CloudWatch Logs של Lambda |
+| בעיה                              | פתרון                                                       |
+| --------------------------------- | ----------------------------------------------------------- |
+| הודעות נתקעות ב-In Flight         | הגדילו `VisibilityTimeout` או קצרו עיבוד Lambda             |
+| הודעות ב-DLQ (אם הוגדר)           | בדקו CloudWatch Logs של Lambda                              |
 | S3 notification נכשל ב-validation | Queue Policy חייב להיות קיים **לפני** ה-bucket notification |
 
 ---
@@ -358,23 +359,23 @@ const s3Record = body.Records[0];
 
 ### פרמטרים מהפרויקט
 
-| פרמטר | ערך |
-|---|---|
-| **FunctionName** | `preread-process-document` |
-| **Runtime** | `nodejs22.x` |
-| **Handler** | `index.handler` |
-| **Timeout** | `120` שניות |
-| **Memory** | `1024` MB |
-| **VPC** | **אין** (ב-template הנוכחי — Lambda מחוץ ל-VPC) |
+| פרמטר            | ערך                                             |
+| ---------------- | ----------------------------------------------- |
+| **FunctionName** | `preread-process-document`                      |
+| **Runtime**      | `nodejs22.x`                                    |
+| **Handler**      | `index.handler`                                 |
+| **Timeout**      | `120` שניות                                     |
+| **Memory**       | `1024` MB                                       |
+| **VPC**          | **אין** (ב-template הנוכחי — Lambda מחוץ ל-VPC) |
 
 ### משתני סביבה (ב-Lambda)
 
-| משתנה | מקור | ערך ברירת מחדל |
-|---|---|---|
-| `BEDROCK_MODEL_ID` | CFN Parameter | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
-| `BEDROCK_TEMPERATURE` | CFN | `0` |
-| `BEDROCK_TOKEN_EXPIRES_SECONDS` | CFN | `43200` |
-| `DATABASE_URL_SECRET_ARN` | CFN Parameter | ARN של `preread/database-url` |
+| משתנה                           | מקור          | ערך ברירת מחדל                                   |
+| ------------------------------- | ------------- | ------------------------------------------------ |
+| `BEDROCK_MODEL_ID`              | CFN Parameter | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
+| `BEDROCK_TEMPERATURE`           | CFN           | `0`                                              |
+| `BEDROCK_TOKEN_EXPIRES_SECONDS` | CFN           | `43200`                                          |
+| `DATABASE_URL_SECRET_ARN`       | CFN Parameter | ARN של `preread/database-url`                    |
 
 > בקוד (`processor.js`) ברירת המחדל למודל היא `global.anthropic.claude-sonnet-4-20250514-v1:0` — ודאו שה-`BEDROCK_MODEL_ID` ב-Lambda תואם למודל שביקשתם ב-Bedrock Console (inference profile, לא foundation model ID ישיר).
 
@@ -421,21 +422,21 @@ return { batchItemFailures: failures };
 
 ### VPC — מתי צריך?
 
-| תרחיש | VPC ב-Lambda? |
-|---|---|
-| RDS **Publicly accessible** + security group מאפשר IP רחב | לא חובה (פחות מומלץ לפרודקשן) |
-| RDS **Private** בתוך VPC | **כן** — Lambda חייב subnets + security group |
+| תרחיש                                                     | VPC ב-Lambda?                                 |
+| --------------------------------------------------------- | --------------------------------------------- |
+| RDS **Publicly accessible** + security group מאפשר IP רחב | לא חובה (פחות מומלץ לפרודקשן)                 |
+| RDS **Private** בתוך VPC                                  | **כן** — Lambda חייב subnets + security group |
 
 > `infra/deploy.mjs` מכיל פונקציה `discoverNetwork()` לגילוי VPC של RDS ויצירת `preread-lambda-sg`, אך **template.yaml הנוכחי לא מגדיר VPC** ל-Lambda. אם RDS פרטי — תצטרכו להוסיף `VpcConfig` ל-template או לעדכן ידנית.
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
-| `Task timed out after 120.00 seconds` | PDF גדול / Bedrock איטי — הגדילו timeout או הקטינו PDF |
-| `Cannot find module '@prisma/client'` | הריצו deploy מחדש — prisma generate חסר ב-zip |
-| `ENOENT` ב-handler | ודאו ש-`Handler` הוא `index.handler` (קובץ `index.mjs`) |
-| עדכון קוד לא נכנס | השתמשו ב-`node infra/push-lambda.mjs` (מפתח S3 חדש בכל פעם) |
+| בעיה                                  | פתרון                                                       |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `Task timed out after 120.00 seconds` | PDF גדול / Bedrock איטי — הגדילו timeout או הקטינו PDF      |
+| `Cannot find module '@prisma/client'` | הריצו deploy מחדש — prisma generate חסר ב-zip               |
+| `ENOENT` ב-handler                    | ודאו ש-`Handler` הוא `index.handler` (קובץ `index.mjs`)     |
+| עדכון קוד לא נכנס                     | השתמשו ב-`node infra/push-lambda.mjs` (מפתח S3 חדש בכל פעם) |
 
 ---
 
@@ -464,19 +465,12 @@ return { batchItemFailures: failures };
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "sqs:ReceiveMessage",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes"
-      ],
+      "Action": ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"],
       "Resource": "arn:aws:sqs:us-east-1:ACCOUNT:preread-docs-UploadQueue-*"
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "bedrock:InvokeModel",
-        "bedrock:CallWithBearerToken"
-      ],
+      "Action": ["bedrock:InvokeModel", "bedrock:CallWithBearerToken"],
       "Resource": "*"
     },
     {
@@ -533,10 +527,10 @@ ProcessDocumentRole:
 
 ### שם ו-ARN
 
-| שדה | ערך |
-|---|---|
-| Secret name | `preread/database-url` |
-| תוכן | מחרוזת מלאה: `postgresql://user:pass@host:5432/db?sslmode=require` |
+| שדה         | ערך                                                                |
+| ----------- | ------------------------------------------------------------------ |
+| Secret name | `preread/database-url`                                             |
+| תוכן        | מחרוזת מלאה: `postgresql://user:pass@host:5432/db?sslmode=require` |
 
 ### יצירה ידנית ב-AWS Console
 
@@ -566,11 +560,11 @@ process.env.DATABASE_URL = secret.SecretString;
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
+| בעיה                                      | פתרון                                                     |
+| ----------------------------------------- | --------------------------------------------------------- |
 | `AccessDeniedException` על GetSecretValue | הוסיפו `secretsmanager:GetSecretValue` ל-role עם ARN נכון |
-| Lambda מתחבר ל-DB הלא נכון | הריצו `sync-db-secret.mjs` אחרי שינוי `DATABASE_URL` |
-| Secret ב-region שונה | Secret ו-Lambda חייבים להיות באותו region |
+| Lambda מתחבר ל-DB הלא נכון                | הריצו `sync-db-secret.mjs` אחרי שינוי `DATABASE_URL`      |
+| Secret ב-region שונה                      | Secret ו-Lambda חייבים להיות באותו region                 |
 
 ---
 
@@ -625,19 +619,19 @@ npm run db:deploy       # פרודקשן / CI
 
 ### Public vs Private
 
-| מצב | Express מקומי | Lambda |
-|---|---|---|
-| **Public RDS** | מתחבר ישירות (SG + IP) | מתחבר ישירות (ללא VPC) |
-| **Private RDS** | דורש VPN / SSH tunnel | **חייב** Lambda ב-VPC + SG rule |
+| מצב             | Express מקומי          | Lambda                          |
+| --------------- | ---------------------- | ------------------------------- |
+| **Public RDS**  | מתחבר ישירות (SG + IP) | מתחבר ישירות (ללא VPC)          |
+| **Private RDS** | דורש VPN / SSH tunnel  | **חייב** Lambda ב-VPC + SG rule |
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
-| `Connection timed out` מ-Lambda | RDS פרטי אבל Lambda לא ב-VPC — הוסיפו VPC או הפכו ל-public (זמני) |
-| `password authentication failed` | בדקו secret / DATABASE_URL |
-| `self signed certificate` | הוסיפו `?sslmode=require` ; בפיתוח `setup-dev-db.mjs` משתמש ב-`rejectUnauthorized: false` |
-| Prisma `Can't reach database` | SG לא מאפשר 5432 מהמקור הנכון |
+| בעיה                             | פתרון                                                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| `Connection timed out` מ-Lambda  | RDS פרטי אבל Lambda לא ב-VPC — הוסיפו VPC או הפכו ל-public (זמני)                         |
+| `password authentication failed` | בדקו secret / DATABASE_URL                                                                |
+| `self signed certificate`        | הוסיפו `?sslmode=require` ; בפיתוח `setup-dev-db.mjs` משתמש ב-`rejectUnauthorized: false` |
+| Prisma `Can't reach database`    | SG לא מאפשר 5432 מהמקור הנכון                                                             |
 
 ---
 
@@ -672,15 +666,19 @@ npm run db:deploy       # פרודקשן / CI
 
 ```javascript
 // allowRdsFromLambda — מוסיף ingress מ-lambdaSgId ל-rdsSgIds
-await ec2.send(new AuthorizeSecurityGroupIngressCommand({
-  GroupId: rdsSgId,
-  IpPermissions: [{
-    IpProtocol: 'tcp',
-    FromPort: 5432,
-    ToPort: 5432,
-    UserIdGroupPairs: [{ GroupId: lambdaSgId }],
-  }],
-}));
+await ec2.send(
+  new AuthorizeSecurityGroupIngressCommand({
+    GroupId: rdsSgId,
+    IpPermissions: [
+      {
+        IpProtocol: 'tcp',
+        FromPort: 5432,
+        ToPort: 5432,
+        UserIdGroupPairs: [{ GroupId: lambdaSgId }],
+      },
+    ],
+  }),
+);
 ```
 
 ### Lambda VPC Config (אם מוסיפים ל-template)
@@ -698,11 +696,11 @@ VpcConfig:
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
+| בעיה                     | פתרון                                                          |
+| ------------------------ | -------------------------------------------------------------- |
 | Lambda timeout על כל דבר | חסר NAT Gateway / VPC endpoints ל-S3, Secrets Manager, Bedrock |
-| `ETIMEDOUT` ל-RDS בלבד | SG של RDS לא מאפשר מ-Lambda SG |
-| Cold start איטי | VPC מוסיף latency — נורמלי |
+| `ETIMEDOUT` ל-RDS בלבד   | SG של RDS לא מאפשר מ-Lambda SG                                 |
+| Cold start איטי          | VPC מוסיף latency — נורמלי                                     |
 
 ---
 
@@ -714,17 +712,17 @@ VpcConfig:
 
 ### מודלים בפרויקט
 
-| מקור | Model ID ברירת מחדל |
-|---|---|
-| `infra/template.yaml` | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
+| מקור                                   | Model ID ברירת מחדל                              |
+| -------------------------------------- | ------------------------------------------------ |
+| `infra/template.yaml`                  | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
 | `lambda/process-document/processor.js` | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
 
 **המלצה:** בחרו מודל אחד והגדירו `BEDROCK_MODEL_ID` בכל מקום.
 
-| משפחה | Model ID לדוגמה | PDF support | API בקוד |
-|---|---|---|---|
+| משפחה                | Model ID לדוגמה                                  | PDF support         | API בקוד                                        |
+| -------------------- | ------------------------------------------------ | ------------------- | ----------------------------------------------- |
 | **Anthropic Claude** | `global.anthropic.claude-sonnet-4-20250514-v1:0` | כן (document block) | `@anthropic-ai/bedrock-sdk` → `messages.create` |
-| **Amazon Nova** | `amazon.nova-pro-v1:0` | דרך Converse API | דורש שינוי קוד (לא SDK הנוכחי) |
+| **Amazon Nova**      | `amazon.nova-pro-v1:0`                           | דרך Converse API    | דורש שינוי קוד (לא SDK הנוכחי)                  |
 
 ### הפעלת גישה למודל (חובה!)
 
@@ -748,23 +746,23 @@ Resource: '*'
 
 ### משתני Bedrock ב-Lambda
 
-| משתנה | תיאור |
-|---|---|
-| `BEDROCK_MODEL_ID` | מזהה מודל מלא |
-| `BEDROCK_TEMPERATURE` | `0` = דטרמיניסטי |
-| `BEDROCK_TOP_P` | אופציונלי |
+| משתנה                           | תיאור                        |
+| ------------------------------- | ---------------------------- |
+| `BEDROCK_MODEL_ID`              | מזהה מודל מלא                |
+| `BEDROCK_TEMPERATURE`           | `0` = דטרמיניסטי             |
+| `BEDROCK_TOP_P`                 | אופציונלי                    |
 | `BEDROCK_TOKEN_EXPIRES_SECONDS` | לשימוש עתידי עם bearer token |
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
-| `AccessDeniedException` | הפעילו model access ב-Console |
-| `Model not found` | בדקו region — לא כל מודל בכל region |
-| `does not support PDF` / `document` | עברו ל-Claude; Nova דורש Converse API שונה |
+| בעיה                                   | פתרון                                                    |
+| -------------------------------------- | -------------------------------------------------------- |
+| `AccessDeniedException`                | הפעילו model access ב-Console                            |
+| `Model not found`                      | בדקו region — לא כל מודל בכל region                      |
+| `does not support PDF` / `document`    | עברו ל-Claude; Nova דורש Converse API שונה               |
 | `ValidationException` על document name | ב-Converse API: שם מסמך — `[a-zA-Z0-9]` בלבד, ללא רווחים |
-| תשובה לא JSON | המודל עטף ב-markdown — הקוד מנסה לחלץ JSON ב-regex |
-| Model ID ב-CFN ≠ בקוד | הגדירו `BEDROCK_MODEL_ID` מפורש ב-deploy |
+| תשובה לא JSON                          | המודל עטף ב-markdown — הקוד מנסה לחלץ JSON ב-regex       |
+| Model ID ב-CFN ≠ בקוד                  | הגדירו `BEDROCK_MODEL_ID` מפורש ב-deploy                 |
 
 ---
 
@@ -776,11 +774,11 @@ Resource: '*'
 
 ### פרמטרים מהפרויקט
 
-| פרמטר | ערך |
-|---|---|
-| **BatchSize** | `10` |
+| פרמטר                     | ערך                       |
+| ------------------------- | ------------------------- |
+| **BatchSize**             | `10`                      |
 | **FunctionResponseTypes** | `ReportBatchItemFailures` |
-| **Event source** | SQS ARN של `UploadQueue` |
+| **Event source**          | SQS ARN של `UploadQueue`  |
 
 ### יצירה ידנית ב-AWS Console
 
@@ -817,11 +815,11 @@ return { batchItemFailures: failures };
 
 ### מלכודות נפוצות
 
-| בעיה | פתרון |
-|---|---|
-| Lambda לא מופעלת | בדקו ש-trigger ב-state `Enabled` |
-| אותה הודעה חוזרת | שגיאה בלתי מטופלת — בדקו Logs; הודעה תנסה שוב עד retention |
-| Partial batch failure לא עובד | ודאו `ReportBatchItemFailures` מופעל |
+| בעיה                          | פתרון                                                      |
+| ----------------------------- | ---------------------------------------------------------- |
+| Lambda לא מופעלת              | בדקו ש-trigger ב-state `Enabled`                           |
+| אותה הודעה חוזרת              | שגיאה בלתי מטופלת — בדקו Logs; הודעה תנסה שוב עד retention |
+| Partial batch failure לא עובד | ודאו `ReportBatchItemFailures` מופעל                       |
 
 ---
 
@@ -833,18 +831,18 @@ return { batchItemFailures: failures };
 
 ### Parameters
 
-| Parameter | מקור ב-deploy | דוגמה |
-|---|---|---|
-| `UploadBucketName` | `S3_UPLOAD_BUCKET` או `preread-uploads-{Account}-{region}` | `preread-uploads-123456789012-us-east-1` |
-| `DatabaseUrlSecretArn` | נוצר ע"י `ensureSecret()` | `arn:aws:secretsmanager:...` |
-| `BedrockModelId` | `BEDROCK_MODEL_ID` env | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
+| Parameter              | מקור ב-deploy                                              | דוגמה                                            |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------ |
+| `UploadBucketName`     | `S3_UPLOAD_BUCKET` או `preread-uploads-{Account}-{region}` | `preread-uploads-123456789012-us-east-1`         |
+| `DatabaseUrlSecretArn` | נוצר ע"י `ensureSecret()`                                  | `arn:aws:secretsmanager:...`                     |
+| `BedrockModelId`       | `BEDROCK_MODEL_ID` env                                     | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
 
 ### Outputs
 
-| Output | שימוש |
-|---|---|
-| `UploadQueueArn` | אבחון / אינטגרציות |
-| `UploadBucketNameOutput` | וידוא שם bucket |
+| Output                   | שימוש              |
+| ------------------------ | ------------------ |
+| `UploadQueueArn`         | אבחון / אינטגרציות |
+| `UploadBucketNameOutput` | וידוא שם bucket    |
 
 ### Deploy אוטומטי
 
@@ -882,12 +880,12 @@ aws cloudformation deploy \
 
 ### מצבי Stack
 
-| Status | משמעות |
-|---|---|
-| `CREATE_COMPLETE` | הצלחה |
-| `UPDATE_COMPLETE` | עדכון הצליח |
-| `ROLLBACK_COMPLETE` | יצירה נכשלה — deploy.mjs מוחק ויוצר מחדש |
-| `UPDATE_ROLLBACK_COMPLETE` | עדכון נכשל — בדקו Events |
+| Status                     | משמעות                                   |
+| -------------------------- | ---------------------------------------- |
+| `CREATE_COMPLETE`          | הצלחה                                    |
+| `UPDATE_COMPLETE`          | עדכון הצליח                              |
+| `ROLLBACK_COMPLETE`        | יצירה נכשלה — deploy.mjs מוחק ויוצר מחדש |
+| `UPDATE_ROLLBACK_COMPLETE` | עדכון נכשל — בדקו Events                 |
 
 ### אבחון stack
 
@@ -903,29 +901,29 @@ node infra/diagnose.mjs
 
 ### טבלת מיפוי מלאה
 
-| משתנה `.env` | שירות | שימוש |
-|---|---|---|
-| `DATABASE_URL` | RDS | Express + Prisma; מסונכרן ל-Secrets Manager ב-deploy |
-| `DATABASE_URL_PROD` | RDS | אופציונלי — שמירת URL פרודקשן אחרי `db:setup-dev` |
-| `AWS_REGION` | כל AWS SDK | `us-east-1` |
-| `AWS_ACCESS_KEY_ID` | IAM User | העלאות S3 מהאפליקציה + deploy |
-| `AWS_SECRET_ACCESS_KEY` | IAM User | כנ״ל |
-| `S3_UPLOAD_BUCKET` | S3 | שם upload bucket — **חובה בפרודקשן** |
-| `BEDROCK_MODEL_ID` | Bedrock / CFN | מועבר כ-parameter ב-deploy (לא ב-`.env.example` — הוסיפו אם צריך) |
-| `STACK_NAME` | CloudFormation | ברירת מחדל `preread-docs` (רק ב-deploy) |
-| `PORT` | Express | `3000` |
-| `BETTER_AUTH_SECRET` | אפליקציה | אימות |
-| `CSRF_SECRET` | אפליקציה | CSRF |
-| `BETTER_AUTH_URL` | אפליקציה | URL בסיס |
-| `GOOGLE_CLIENT_ID` / `SECRET` | OAuth | התחברות Google |
-| `RESEND_API_KEY` | Email | שליחת מיילים |
+| משתנה `.env`                  | שירות          | שימוש                                                             |
+| ----------------------------- | -------------- | ----------------------------------------------------------------- |
+| `DATABASE_URL`                | RDS            | Express + Prisma; מסונכרן ל-Secrets Manager ב-deploy              |
+| `DATABASE_URL_PROD`           | RDS            | אופציונלי — שמירת URL פרודקשן אחרי `db:setup-dev`                 |
+| `AWS_REGION`                  | כל AWS SDK     | `us-east-1`                                                       |
+| `AWS_ACCESS_KEY_ID`           | IAM User       | העלאות S3 מהאפליקציה + deploy                                     |
+| `AWS_SECRET_ACCESS_KEY`       | IAM User       | כנ״ל                                                              |
+| `S3_UPLOAD_BUCKET`            | S3             | שם upload bucket — **חובה בפרודקשן**                              |
+| `BEDROCK_MODEL_ID`            | Bedrock / CFN  | מועבר כ-parameter ב-deploy (לא ב-`.env.example` — הוסיפו אם צריך) |
+| `STACK_NAME`                  | CloudFormation | ברירת מחדל `preread-docs` (רק ב-deploy)                           |
+| `PORT`                        | Express        | `3000`                                                            |
+| `BETTER_AUTH_SECRET`          | אפליקציה       | אימות                                                             |
+| `CSRF_SECRET`                 | אפליקציה       | CSRF                                                              |
+| `BETTER_AUTH_URL`             | אפליקציה       | URL בסיס                                                          |
+| `GOOGLE_CLIENT_ID` / `SECRET` | OAuth          | התחברות Google                                                    |
+| `RESEND_API_KEY`              | Email          | שליחת מיילים                                                      |
 
 ### משתנים ב-Lambda בלבד (לא ב-`.env` של Express)
 
-| משתנה | מקור |
-|---|---|
-| `DATABASE_URL_SECRET_ARN` | CloudFormation |
-| `BEDROCK_TEMPERATURE` | CloudFormation |
+| משתנה                           | מקור           |
+| ------------------------------- | -------------- |
+| `DATABASE_URL_SECRET_ARN`       | CloudFormation |
+| `BEDROCK_TEMPERATURE`           | CloudFormation |
 | `BEDROCK_TOKEN_EXPIRES_SECONDS` | CloudFormation |
 
 ---
@@ -972,16 +970,120 @@ node infra/push-lambda.mjs
 
 ### סקריפטים נוספים
 
-| סקריפט | מטרה |
-|---|---|
-| `infra/deploy.ps1` | גרסת PowerShell ל-deploy (Windows) |
-| `infra/diagnose.mjs` | אבחון מצב stack / Lambda / SQS / logs |
-| `infra/sync-db-secret.mjs` | סנכרון DATABASE_URL ל-Secrets Manager |
-| `infra/update-lambda-code.mjs` | עדכון קוד (אם קיים) |
+| סקריפט                         | מטרה                                  |
+| ------------------------------ | ------------------------------------- |
+| `infra/deploy.ps1`             | גרסת PowerShell ל-deploy (Windows)    |
+| `infra/diagnose.mjs`           | אבחון מצב stack / Lambda / SQS / logs |
+| `infra/sync-db-secret.mjs`     | סנכרון DATABASE_URL ל-Secrets Manager |
+| `infra/update-lambda-code.mjs` | עדכון קוד (אם קיים)                   |
 
 ---
 
-## 15. אבחון ופתרון תקלות
+## 15. פריסת האפליקציה ל-EC2
+
+האפליקציה (Express + EJS) רצה על **EC2**. עיבוד PDF נשאר ב-Lambda. הסקריפטים ב-`infra/` מקימים את השרת ומעלים קוד.
+
+### ארכיטקטורה
+
+```mermaid
+flowchart LR
+  Browser["Browser http://EC2_IP"] --> Nginx["nginx :80"]
+  Nginx --> Express["Express + PM2 :3000"]
+  Express --> RDS[(RDS)]
+  Express -->|PutObject| S3[(S3 Upload)]
+  S3 --> SQS --> Lambda --> Bedrock
+  Lambda --> RDS
+```
+
+### דרישות מוקדמות
+
+- Stack `preread-docs` כבר deployed (S3 + SQS + Lambda)
+- RDS PostgreSQL באותו VPC
+- `.env` מקומי עם: `DATABASE_URL`, `S3_UPLOAD_BUCKET`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+- `BETTER_AUTH_SECRET` — ערך ייחודי (לא ערך ה-dev). אם חסר, `ec2:push` מייצר אחד אוטומטית
+
+### פקודות
+
+```bash
+# פעם ראשונה — יצירת EC2, Security Group, IAM Role, חיבור ל-RDS
+npm run ec2:deploy
+
+# העלאת קוד + .env + prisma migrate + PM2
+npm run ec2:push
+```
+
+| סקריפט | קובץ | מה עושה |
+|--------|------|---------|
+| `ec2:deploy` | `infra/deploy-ec2.mjs` | מאתר RDS/VPC, יוצר `preread-app-sg`, IAM role `preread-ec2-app`, משיק `t3.small` (Amazon Linux 2023), ממתין ל-SSM |
+| `ec2:push` | `infra/push-app.mjs` | אורז את הקוד, מעלה ל-S3 artifacts, מריץ deploy דרך SSM |
+
+מצב ה-instance נשמר ב-`infra/.build/ec2-state.json` (לא ב-git).
+
+### מה נוצר ב-AWS
+
+| משאב | שם / תיאור |
+|------|------------|
+| EC2 | Tag `Name=preread-app`, Instance Profile `preread-ec2-app` |
+| Security Group | `preread-app-sg` — inbound 80 מכל מקום, 22 מה-IP שלך |
+| RDS ingress | פורט 5432 מ-`preread-app-sg` |
+| IAM | `s3:PutObject` על upload bucket, `s3:GetObject` על artifacts, `AmazonSSMManagedInstanceCore` |
+| על השרת | Node 22, nginx (80→3000), PM2, אפליקציה ב-`/opt/preread/app` |
+
+### משתני סביבה על EC2
+
+`ec2:push` כותב `/opt/preread/app/.env`:
+
+| משתנה | ערך |
+|--------|-----|
+| `NODE_ENV` | `production` |
+| `PORT` | `3000` |
+| `BETTER_AUTH_URL` | `http://<PUBLIC_IP>` |
+| `TRUST_PROXY` | `false` |
+| `DATABASE_URL`, `S3_UPLOAD_BUCKET`, … | מועתקים מה-`.env` המקומי |
+
+**חשוב — HTTP מול HTTPS:**
+
+- כש-`BETTER_AUTH_URL` מתחיל ב-`http://` (IP ציבורי בלי דומיין): Helmet **מכבה** HSTS, COOP ו-`upgrade-insecure-requests`. Cookies בלי `Secure`.
+- כש-`BETTER_AUTH_URL` מתחיל ב-`https://` (דומיין + TLS): מופעלים HSTS, COOP, ו-Secure cookies.
+
+אם הדפדפן כבר קיבל HSTS בעבר ל-IP הזה, נקו את ה-cache:
+
+- Chrome/Edge: `chrome://net-internals/#hsts` → Delete domain security policies → הזינו את ה-IP
+- או גלישה בחלון פרטי
+
+### עדכון קוד אחרי שינויים
+
+```bash
+npm run ec2:push
+```
+
+אין צורך ב-`ec2:deploy` מחדש אלא אם מחקתם את ה-instance.
+
+### Elastic IP (מומלץ)
+
+IP ציבורי של EC2 משתנה אחרי stop/start. כדי לקבע:
+
+1. EC2 Console → Elastic IPs → Allocate
+2. Associate ל-instance `preread-app`
+3. עדכנו `BETTER_AUTH_URL=http://NEW_IP` והריצו `npm run ec2:push`
+
+### HTTPS בעתיד (דומיין)
+
+1. הצמידו Elastic IP + רשמו A record לדומיין
+2. על EC2: Certbot + nginx listen 443
+3. עדכנו `.env` על השרת: `BETTER_AUTH_URL=https://your.domain`, `TRUST_PROXY=true`
+4. פתחו פורט 443 ב-`preread-app-sg`
+5. `pm2 restart preread`
+
+### אימות
+
+1. `http://<PUBLIC_IP>` — דף הבית נטען עם CSS
+2. הרשמה / התחברות
+3. העלאת PDF — אובייקט ב-S3 + עיבוד Lambda
+
+---
+
+## 16. אבחון ופתרון תקלות
 
 ### כלי אבחון ראשוני
 
@@ -991,22 +1093,25 @@ node infra/diagnose.mjs
 
 ### טבלת תקלות נפוצות
 
-| תסמין | סיבה סבירה | פתרון |
-|---|---|---|
-| `Bedrock invoke failed (403)` | Model access לא הופעל | Bedrock Console → Enable model |
-| `AccessDeniedException` + `CallWithBearerToken` | חסרה הרשאה ב-IAM role | הוסיפו `bedrock:CallWithBearerToken` (כבר ב-template) |
-| `on-demand throughput isn't supported` | שימוש ב-foundation model ID ישיר במקום inference profile | הגדירו `BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-20250514-v1:0` (או `us.` / `eu.` לפי region) |
-| `does not support document / PDF` | מודל Nova עם קוד Claude | הגדירו `BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-...` |
-| `The document file name can only contain alphanumeric characters` | שם מסמך לא תקין ב-Converse API | השתמשו בשם כמו `document` בלבד |
-| Lambda `Task timed out` | חיבור RDS איטי / VPC בלי NAT | הוסיפו VPC endpoints או הגדילו timeout |
-| `Can't reach database server` | RDS private, Lambda לא ב-VPC | הוסיפו `VpcConfig` ל-Lambda + SG rules |
-| `No matching processing document for s3 object` | רשומת DB לא נוצרה לפני S3 event | ודאו שהאפליקציה יצרה `Document` עם `s3Key` תואם |
-| מסמך תקוע ב-`processing` | שרת נפל באמצע | `failStuckProcessingDocuments()` בריסטארט; או עדכון ידני |
-| SQS messages גדלות, Lambda לא רצה | Trigger מנותק / שגיאת הרשאות | בדקו Event Source Mapping ב-Console |
-| `S3_UPLOAD_BUCKET is not configured` | חסר ב-`.env` | הוסיפו אחרי deploy ראשון |
-| CloudFormation `ROLLBACK_COMPLETE` | סדר יצירה / שם bucket תפוס | מחקו stack (`deploy.mjs` עושה זאת אוטומטית) ונסו שוב |
-| העלאה עובדת, אין מילים | PDF בעברית / אין אנגלית | התנהגות תקינה — מחזיר `words: []` |
-| שם קובץ עם תווים מיוחדים | מנורמל ב-s3Key | רק `a-zA-Z0-9-_` — תווים אחרים הופכים ל-`_` |
+| תסמין                                                             | סיבה סבירה                                               | פתרון                                                                                                  |
+| ----------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `Bedrock invoke failed (403)`                                     | Model access לא הופעל                                    | Bedrock Console → Enable model                                                                         |
+| `AccessDeniedException` + `CallWithBearerToken`                   | חסרה הרשאה ב-IAM role                                    | הוסיפו `bedrock:CallWithBearerToken` (כבר ב-template)                                                  |
+| `on-demand throughput isn't supported`                            | שימוש ב-foundation model ID ישיר במקום inference profile | הגדירו `BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-20250514-v1:0` (או `us.` / `eu.` לפי region) |
+| `does not support document / PDF`                                 | מודל Nova עם קוד Claude                                  | הגדירו `BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-...`                                         |
+| `The document file name can only contain alphanumeric characters` | שם מסמך לא תקין ב-Converse API                           | השתמשו בשם כמו `document` בלבד                                                                         |
+| Lambda `Task timed out`                                           | חיבור RDS איטי / VPC בלי NAT                             | הוסיפו VPC endpoints או הגדילו timeout                                                                 |
+| `Can't reach database server`                                     | RDS private, Lambda לא ב-VPC                             | הוסיפו `VpcConfig` ל-Lambda + SG rules                                                                 |
+| `No matching processing document for s3 object`                   | רשומת DB לא נוצרה לפני S3 event                          | ודאו שהאפליקציה יצרה `Document` עם `s3Key` תואם                                                        |
+| מסמך תקוע ב-`processing`                                          | שרת נפל באמצע                                            | `failStuckProcessingDocuments()` בריסטארט; או עדכון ידני                                               |
+| SQS messages גדלות, Lambda לא רצה                                 | Trigger מנותק / שגיאת הרשאות                             | בדקו Event Source Mapping ב-Console                                                                    |
+| `S3_UPLOAD_BUCKET is not configured`                              | חסר ב-`.env`                                             | הוסיפו אחרי deploy ראשון                                                                               |
+| CloudFormation `ROLLBACK_COMPLETE`                                | סדר יצירה / שם bucket תפוס                               | מחקו stack (`deploy.mjs` עושה זאת אוטומטית) ונסו שוב                                                   |
+| העלאה עובדת, אין מילים                                            | PDF בעברית / אין אנגלית                                  | התנהגות תקינה — מחזיר `words: []`                                                                      |
+| שם קובץ עם תווים מיוחדים                                          | מנורמל ב-s3Key                                           | רק `a-zA-Z0-9-_` — תווים אחרים הופכים ל-`_`                                                            |
+| CSS/JS נטענים ב-`https://` ונופלים (`ERR_CONNECTION_TIMED_OUT`) | HSTS / upgrade-insecure-requests על HTTP IP              | ודאו `BETTER_AUTH_URL=http://...`; נקו HSTS ב-`chrome://net-internals/#hsts`; הריצו `npm run ec2:push` |
+| `Cross-Origin-Opener-Policy` ignored                              | COOP דורש HTTPS                                          | מושבת אוטומטית כש-URL הוא HTTP                                                                         |
+| 502 Bad Gateway מ-nginx                                           | PM2 / Express לא רץ                                      | `pm2 logs preread` דרך SSM; בדקו `BETTER_AUTH_SECRET`                                                  |
 
 ### CloudWatch Logs
 
@@ -1026,39 +1131,41 @@ Log group: /aws/lambda/preread-process-document
 
 ### שגיאות Prisma ב-Lambda
 
-| שגיאה | פתרון |
-|---|---|
+| שגיאה                                             | פתרון                                          |
+| ------------------------------------------------- | ---------------------------------------------- |
 | `Prisma Client could not locate the Query Engine` | הריצו deploy — חסר `rhel-openssl-3.0.x` binary |
-| `Invalid prisma.document.findFirst()` | migrations לא רצו על ה-DB שב-secret |
+| `Invalid prisma.document.findFirst()`             | migrations לא רצו על ה-DB שב-secret            |
 
 ---
 
-## 16. עלות ואבטחה
+## 17. עלות ואבטחה
 
 ### הערכת עלות (פיתוח, us-east-1)
 
-| שירות | עלות משוערת |
-|---|---|
-| RDS `db.t3.micro` | ~$15/חודש (Free tier שנה ראשונה) |
-| Lambda | חינם עד 1M requests / 400K GB-s |
-| S3 | סנטים לפי גודל PDF |
-| SQS | כמעט חינם בנפח נמוך |
-| Bedrock | לפי tokens + מודל — העיקרי בעלות שימוש |
-| Secrets Manager | ~$0.40/secret/חודש |
-| NAT Gateway (אם VPC) | ~$32+/חודש — הימנעו בפיתוח |
+| שירות                | עלות משוערת                            |
+| -------------------- | -------------------------------------- |
+| RDS `db.t3.micro`    | ~$15/חודש (Free tier שנה ראשונה)       |
+| EC2 `t3.small`       | ~$15/חודש                              |
+| Lambda               | חינם עד 1M requests / 400K GB-s        |
+| S3                   | סנטים לפי גודל PDF                     |
+| SQS                  | כמעט חינם בנפח נמוך                    |
+| Bedrock              | לפי tokens + מודל — העיקרי בעלות שימוש |
+| Secrets Manager      | ~$0.40/secret/חודש                     |
+| NAT Gateway (אם VPC) | ~$32+/חודש — הימנעו בפיתוח             |
 
 ### אבטחה — best practices
 
-| נושא | המלצה |
-|---|---|
-| **סיסמאות** | לעולם לא ב-git; השתמשו ב-Secrets Manager ל-Lambda |
-| **S3** | Block Public Access; גישה רק דרך IAM |
-| **RDS** | Private subnet בפרודקשן; SG מצמצם |
-| **IAM** | משתמש נפרד לפיתוח; בפרודקשן EC2 Instance Role |
-| **Bedrock** | הגבילו `Resource` ב-IAM למודל ספציפי כשאפשר |
-| **TLS** | `sslmode=require` ב-DATABASE_URL |
-| **Rate limiting** | מוגדר באפליקציה (`RATE_LIMIT_UPLOAD_MAX=5`) |
-| **CSRF** | מופעל ב-Express (`__preread_csrf`) |
+| נושא              | המלצה                                             |
+| ----------------- | ------------------------------------------------- |
+| **סיסמאות**       | לעולם לא ב-git; השתמשו ב-Secrets Manager ל-Lambda |
+| **S3**            | Block Public Access; גישה רק דרך IAM              |
+| **RDS**           | Private subnet בפרודקשן; SG מצמצם                 |
+| **IAM**           | משתמש נפרד לפיתוח; בפרודקשן EC2 Instance Role     |
+| **Bedrock**       | הגבילו `Resource` ב-IAM למודל ספציפי כשאפשר       |
+| **TLS**           | `sslmode=require` ב-DATABASE_URL; HTTPS לדומיין בפרודקשן |
+| **HTTP על IP**    | אל תפעילו HSTS — האפליקציה מכבה אוטומטית לפי `BETTER_AUTH_URL` |
+| **Rate limiting** | מוגדר באפליקציה (`RATE_LIMIT_UPLOAD_MAX=5`)       |
+| **CSRF**          | מופעל ב-Express (`__preread_csrf`)                |
 
 ### ניקוי משאבים
 
@@ -1076,11 +1183,17 @@ aws s3 rb s3://preread-artifacts-ACCOUNT-us-east-1
 ## נספח — פקודות מהירות
 
 ```bash
-# Deploy מלא
+# Deploy מלא (S3/SQS/Lambda)
 npm run infra:deploy
 
 # עדכון Lambda בלבד
 node infra/push-lambda.mjs
+
+# EC2 — יצירה ראשונה
+npm run ec2:deploy
+
+# EC2 — העלאת קוד
+npm run ec2:push
 
 # אבחון
 node infra/diagnose.mjs
@@ -1099,18 +1212,21 @@ npm run dev
 
 ## נספח — קבצים רלוונטיים בפרויקט
 
-| קובץ | תיאור |
-|---|---|
-| `infra/template.yaml` | CloudFormation stack |
-| `infra/deploy.mjs` | Deploy אוטומטי (Node) |
-| `infra/push-lambda.mjs` | עדכון קוד Lambda מהיר |
-| `infra/diagnose.mjs` | אבחון תשתית |
-| `infra/sync-db-secret.mjs` | סנכרון DATABASE_URL |
-| `lambda/process-document/` | קוד Lambda |
+| קובץ                        | תיאור                 |
+| --------------------------- | --------------------- |
+| `infra/template.yaml`       | CloudFormation stack  |
+| `infra/deploy.mjs`          | Deploy אוטומטי (Node) |
+| `infra/deploy-ec2.mjs`      | יצירת EC2 + SG + IAM  |
+| `infra/push-app.mjs`        | העלאת אפליקציה ל-EC2  |
+| `infra/ec2/`                | user-data, nginx, IAM |
+| `infra/push-lambda.mjs`     | עדכון קוד Lambda מהיר |
+| `infra/diagnose.mjs`        | אבחון תשתית           |
+| `infra/sync-db-secret.mjs`  | סנכרון DATABASE_URL   |
+| `lambda/process-document/`  | קוד Lambda            |
 | `src/services/s3Service.js` | העלאה ל-S3 מהאפליקציה |
-| `prisma/setup-dev-db.mjs` | הקמת DB פיתוח |
-| `.env.example` | תבנית משתני סביבה |
+| `prisma/setup-dev-db.mjs`   | הקמת DB פיתוח         |
+| `.env.example`              | תבנית משתני סביבה     |
 
 ---
 
-*מסמך זה נוצר עבור פרויקט Preread. ערכים כמו Account ID, ARNs וסיסמאות — החליפו בערכים שלכם. לעולם אל תכניסו secrets אמיתיים ל-git.*
+_מסמך זה נוצר עבור פרויקט Preread. ערכים כמו Account ID, ARNs וסיסמאות — החליפו בערכים שלכם. לעולם אל תכניסו secrets אמיתיים ל-git._

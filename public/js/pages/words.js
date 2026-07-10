@@ -1,6 +1,11 @@
 (() => {
   const params = new URLSearchParams(window.location.search);
   const documentId = params.get('documentId') || '';
+  if (!documentId) {
+    window.location.replace('/upload');
+    return;
+  }
+
   const wordsTable = document.getElementById('wordsTable');
   const printCardsLink = document.getElementById('printCardsLink');
   const deleteDocBtn = document.getElementById('deleteDocBtn');
@@ -146,14 +151,13 @@
         <div class="duplex-guide-header">
           <p class="duplex-guide-title">הדפסה דו-צדדית - איך זה עובד?</p>
           <p class="duplex-guide-text">
-            הדפיסו קודם את עמודי החזית, החזירו את הנייר ללא סיבוב (צד ארוך), ואז הדפיסו את עמודי הגב.
+            כל חזית מופיעה ואחריה הגב שלה. בהדפסה בחרו הדפסה דו-צדדית (היפוך על הצד הארוך) — כך החזית והגב יודפסו על אותו דף.
           </p>
         </div>
         <ol class="duplex-guide-steps">
-          <li class="duplex-guide-step">לחצו <strong>הדפס עכשיו</strong> - יודפס עמוד החזית (המילים באנגלית)</li>
-          <li class="duplex-guide-step">הוציאו את הנייר, <strong>הפכו אותו על הצד הארוך</strong> והחזירו למגש</li>
-          <li class="duplex-guide-step">הדפיסו שוב - יודפס עמוד הגב (הגדרות ותרגומים) בדיוק מאחורי החזית</li>
-          <li class="duplex-guide-step">גזרו לאורך הקווים המקווקווים - כל כרטיסייה מוכנה</li>
+          <li class="duplex-guide-step">לחצו <strong>הדפס עכשיו</strong></li>
+          <li class="duplex-guide-step">בחלון ההדפסה בחרו <strong>הדפסה דו-צדדית</strong> / היפוך על הצד הארוך</li>
+          <li class="duplex-guide-step">כל חזית תודפס עם הגב שלה מאחוריה — ואז גזרו לאורך הקווים המקווקווים</li>
         </ol>
         <div class="duplex-guide-demo" aria-hidden="true">
           <div class="duplex-guide-sheet">
@@ -169,7 +173,7 @@
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M7 17l5-5-5-5M13 17l5-5-5-5"/>
             </svg>
-            <span>הדפסה על הצד השני</span>
+            <span>אותו דף · צד שני</span>
           </div>
           <div class="duplex-guide-sheet">
             <span class="duplex-guide-sheet-label">עמוד 2 · גב</span>
@@ -187,25 +191,29 @@
 
   function renderPrintLayout(words) {
     const frontPages = chunkWords(words, PRINT_CARDS_PER_PAGE);
-    const backPages = frontPages.map((pageWords) => buildBackOrder(pageWords));
-    const sheetConfigs = [
-      ...frontPages.map((pageWords, index) => ({
+    const sheetConfigs = [];
+
+    frontPages.forEach((pageWords, index) => {
+      const isLastSheet = index === frontPages.length - 1;
+      sheetConfigs.push({
         title: renderSheetTitle('חזית הכרטיסיות', index, frontPages.length),
         cardsHtml: pageWords.map(renderFrontCard).join(''),
         isBack: false,
-      })),
-      ...backPages.map((pageWords, index) => ({
-        title: renderSheetTitle('גב הכרטיסיות (להדפסה בצד השני)', index, backPages.length),
-        cardsHtml: pageWords.map(renderBackCard).join(''),
+        pageBreakAfter: true,
+      });
+      sheetConfigs.push({
+        title: renderSheetTitle('גב הכרטיסיות (צד שני של אותו דף)', index, frontPages.length),
+        cardsHtml: buildBackOrder(pageWords).map(renderBackCard).join(''),
         isBack: true,
-      })),
-    ];
+        pageBreakAfter: !isLastSheet,
+      });
+    });
 
     const sheetsHtml = sheetConfigs
-      .map((sheet, index) =>
+      .map((sheet) =>
         renderPrintSheet(sheet.title, sheet.cardsHtml, {
           isBack: sheet.isBack,
-          pageBreakAfter: index < sheetConfigs.length - 1,
+          pageBreakAfter: sheet.pageBreakAfter,
         }),
       )
       .join('');
@@ -219,10 +227,7 @@
       ${sheetsHtml}
     `;
 
-    const printBtn = document.getElementById('printBtn');
-    if (printBtn) {
-      printBtn.addEventListener('click', () => window.print());
-    }
+    document.getElementById('printBtn')?.addEventListener('click', () => window.print());
 
     bindPrintOptions();
     fitPrintCardText(wordsTable);
@@ -325,7 +330,7 @@
       setDeleteButtonVisible(Boolean(documentId));
       if (wordsSummary) wordsSummary.hidden = true;
       const emptyMessage = documentId
-        ? 'לא נמצאו מילים במסמך הזה. נסה להעלות מסמך אחר או לשנות את רמת ה-CEFR.'
+        ? 'לא נמצאו מילים במסמך הזה. נסה להעלות מסמך אחר.'
         : 'אין מילים עדיין. <a class="words-empty-link" href="/upload">העלה PDF</a> כדי להתחיל.';
       wordsTable.innerHTML = renderEmptyState(emptyMessage);
       return;

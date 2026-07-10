@@ -39,23 +39,3 @@ export async function listWords(userId, { documentId } = {}) {
     total: result.length,
   };
 }
-
-export async function getWord(userId, id) {
-  const word = await prisma.word.findFirst({
-    where: {
-      id,
-      document: { userId },
-    },
-    include: {
-      document: { select: { filename: true } },
-      flashcard: true,
-    },
-  });
-
-  if (!word) return null;
-
-  return {
-    ...mapWord(word),
-    ease_factor: word.flashcard?.easeFactor,
-  };
-}

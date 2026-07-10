@@ -1,13 +1,22 @@
 import { submitFlashcardReview } from '#services/reviewService.js';
 import { getDueCards, getStats } from '#services/sm2Service.js';
-import { parseIntOr } from '#utils/parseIntUtils.js';
+import { parseBoundedLimit, parseIntOr, parseOptionalPositiveInt } from '#utils/parseIntUtils.js';
 
 export async function getDue(req, res) {
-  const { documentId, limit } = req.query;
+  const documentId = parseOptionalPositiveInt(req.query.documentId);
+  if (documentId === false) {
+    return res.status(400).json({ error: 'Invalid documentId' });
+  }
+
+  const limit = parseBoundedLimit(req.query.limit, { defaultValue: 50, min: 1, max: 200 });
+  if (limit === false) {
+    return res.status(400).json({ error: 'limit must be an integer between 1 and 200' });
+  }
+
   const cards = await getDueCards({
     userId: req.user.id,
-    documentId: documentId ? parseIntOr(documentId, undefined) : undefined,
-    limit: parseIntOr(limit, 50),
+    documentId,
+    limit,
   });
   res.json({ count: cards.length, cards });
 }

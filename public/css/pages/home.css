@@ -12,7 +12,7 @@
   z-index: 60;
 }
 
-[data-theme="dark"] .landing-header {
+[data-theme='dark'] .landing-header {
   background: var(--nav-glass);
   border-bottom-color: var(--nav-divider);
 }

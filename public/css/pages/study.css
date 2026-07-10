@@ -1,6 +1,83 @@
-.stats-bar {
+.study-stats {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow);
+}
+
+.study-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.study-stats-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.study-stat-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 4.5rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  line-height: 1.2;
+}
+
+.study-stat-chip--xp {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+}
+
+.study-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.study-stat-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.study-stat-loading {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.study-stats-reload {
+  margin-inline-start: 0.25rem;
+}
+
+.xp-toast {
+  position: fixed;
+  top: calc(var(--nav-height) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--toast-bg);
+  color: var(--toast-text);
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  z-index: 200;
   text-align: center;
-  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.3s ease;
+  max-width: calc(100vw - 2rem);
 }
 
 .flashcard-container {
@@ -72,6 +149,32 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.rate-btn:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.rate-btn.rate-btn--pending {
+  opacity: 1;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 55%, transparent);
+  animation: ratePendingPulse 1s ease-in-out infinite;
+}
+
+@keyframes ratePendingPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .rate-0 {
@@ -107,14 +210,25 @@
   color: var(--primary);
 }
 
-.game-stats-mini {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: 0.9rem;
-  color: var(--primary);
-}
-
 @media (max-width: 768px) {
+  .study-stats-row {
+    gap: 0.5rem;
+  }
+
+  .study-stat-chip {
+    min-width: 4rem;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .study-stat-value {
+    font-size: 1rem;
+  }
+
+  .study-stats-reload {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
   .flashcard-context {
     overflow-wrap: anywhere;
   }

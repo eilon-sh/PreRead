@@ -13,7 +13,9 @@ export const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   cookieOptions: {
     httpOnly: true,
     sameSite: 'strict',
-    secure: config.isProduction,
+    // Only mark cookies Secure when the public URL is HTTPS.
+    // HSTS + Secure cookies on plain HTTP break asset loads and auth.
+    secure: config.isHttps,
     path: '/',
   },
   getSessionIdentifier: (req) => req.user?.id ?? req.ip ?? 'anonymous',
@@ -34,9 +36,17 @@ export function helmetMiddleware() {
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
+        // Never upgrade HTTP→HTTPS unless the site is actually served over TLS.
+        ...(config.isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
       },
     },
     crossOriginEmbedderPolicy: false,
+    // COOP / HSTS require a potentially trustworthy origin (HTTPS or localhost).
+    crossOriginOpenerPolicy: config.isHttps ? { policy: 'same-origin' } : false,
+    originAgentCluster: config.isHttps,
+    hsts: config.isHttps
+      ? { maxAge: 15552000, includeSubDomains: true }
+      : false,
   });
 }
 
@@ -104,6 +114,20 @@ export const extractLimiter = rateLimit({
   handler: (_req, res, _next, options) => {
     res.status(options.statusCode).json({
       error: 'הגעת למגבלת חילוץ המילים לשעה. נסה שוב מאוחר יותר.',
+      code: 'RATE_LIMITED',
+      retryAfter: res.getHeader('Retry-After') ?? null,
+    });
+  },
+});
+
+export const passwordResetEmailLimiter = rateLimit({
+  windowMs: config.rateLimit.passwordResetEmailWindowMs,
+  max: config.rateLimit.passwordResetEmailMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res, _next, options) => {
+    res.status(options.statusCode).json({
+      error: 'הגעת למגבלת בקשות איפוס הסיסמה. נסה שוב מאוחר יותר.',
       code: 'RATE_LIMITED',
       retryAfter: res.getHeader('Retry-After') ?? null,
     });

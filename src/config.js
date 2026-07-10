@@ -5,17 +5,20 @@ import { parseIntOr } from '#utils/parseIntUtils.js';
 dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
+const betterAuthUrl = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+const isHttps = betterAuthUrl.startsWith('https://');
 
 export default {
   port: parseIntOr(process.env.PORT, 3000),
   isProduction,
+  isHttps,
   trustProxy: process.env.TRUST_PROXY === 'true',
   awsRegion: process.env.AWS_REGION || 'us-east-1',
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     get enabled() {
-      return !!(this.clientId && this.clientSecret);
+      return false//!!(this.clientId && this.clientSecret);
     },
   },
   resend: {
@@ -25,7 +28,7 @@ export default {
   s3UploadBucket: process.env.S3_UPLOAD_BUCKET || '',
   betterAuthSecret:
     process.env.BETTER_AUTH_SECRET || 'dev-secret-key-for-local-testing-only-32chars',
-  betterAuthUrl: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+  betterAuthUrl,
   csrfSecret:
     process.env.CSRF_SECRET ||
     process.env.BETTER_AUTH_SECRET ||

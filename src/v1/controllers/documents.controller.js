@@ -4,6 +4,7 @@ import {
   listDocuments,
   uploadDocument,
 } from '#services/documentService.js';
+import { parseMinCefr } from '#utils/cefrUtils.js';
 import { parseIntSafe } from '#utils/parseIntUtils.js';
 
 export async function list(req, res) {
@@ -25,7 +26,11 @@ export async function upload(req, res) {
     return res.status(400).json({ error: 'PDF file is required' });
   }
 
-  const minCefr = req.body.minCefr ? String(req.body.minCefr).toUpperCase() : null;
+  const minCefr = parseMinCefr(req.body.minCefr);
+  if (minCefr === false) {
+    return res.status(400).json({ error: 'minCefr must be one of B1, B2, C1, C2' });
+  }
+
   const result = await uploadDocument(req.user.id, {
     buffer: file.buffer,
     originalname: file.originalname,

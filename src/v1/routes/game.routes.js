@@ -5,6 +5,5 @@ const router = express.Router();
 
 router.get('/profile', gameController.getProfile);
 router.get('/achievements', gameController.getAchievementsHandler);
-router.get('/leaderboard', gameController.getLeaderboard);
 
 export default router;
