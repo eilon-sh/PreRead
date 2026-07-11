@@ -27,7 +27,6 @@ export async function getGameWords(userId, { cefr, documentId, limit = 20 } = {}
       word: true,
       definition: true,
       translation: true,
-      context: true,
       cefr: true,
     },
     take,

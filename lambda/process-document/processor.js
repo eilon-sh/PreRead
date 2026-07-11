@@ -290,7 +290,6 @@ async function extractWordsFromPdf(pdfBuffer, minCefr) {
   const request = {
     model: BEDROCK_MODEL_ID,
     max_tokens: 20000,
-    top_p: 0.2,
     temperature: 0,
     system: BEDROCK_SYSTEM_PROMPT,
     messages: [

@@ -1,7 +1,7 @@
 import { awardMinigameXp, getGameWords } from '#services/minigameService.js';
 import { parseBoundedLimit, parseOptionalPositiveInt } from '#utils/parseIntUtils.js';
 
-const GAME_TYPES = new Set(['fill', 'match', 'quiz']);
+const GAME_TYPES = new Set(['match', 'quiz']);
 
 export async function getWords(req, res) {
   const { cefr } = req.query;

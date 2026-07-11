@@ -115,7 +115,7 @@
   padding: 1.25rem;
   background: var(--surface-2);
   border-radius: 8px;
-  text-align: right;
+  text-align: start;
 }
 
 .flashcard-definition,

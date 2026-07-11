@@ -1,10 +1,5 @@
 (() => {
   const GAME_META = {
-    fill: {
-      title: 'השלם את החסר',
-      icon: '✏️',
-      desc: 'השלם את המילה החסרה במשפט',
-    },
     match: { title: 'התאמה', icon: '🔗', desc: 'התאם מילים להגדרות שלהן' },
     quiz: { title: 'בחירה מרובה', icon: '🎯', desc: 'בחר את התשובה הנכונה' },
   };
@@ -12,7 +7,6 @@
   let words = [];
   let currentGame = null;
   let score = { correct: 0, total: 0 };
-  let fillIndex = 0;
   let quizIndex = 0;
   let matchPairs = [];
   let matchSelected = null;
@@ -34,17 +28,6 @@
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
-  }
-
-  function escapeRegex(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function normalize(s) {
-    return (s || '')
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\s'-]/g, '');
   }
 
   function updateScore() {
@@ -89,25 +72,6 @@
     if (res.ok) showXpToast(await res.json());
   }
 
-  function makeFillPrompt(word) {
-    if (word.context) {
-      const regex = new RegExp(`\\b${escapeRegex(word.word)}\\b`, 'i');
-      if (regex.test(word.context)) {
-        return {
-          text: word.context.replace(regex, '_____'),
-          hint: word.definition,
-          answer: word.word,
-        };
-      }
-    }
-    return {
-      text: `הגדרה: ${word.definition}`,
-      hint: word.translation ? `תרגום: ${word.translation}` : '',
-      answer: word.word,
-      noContext: true,
-    };
-  }
-
   function renderPicker() {
     gamePicker.innerHTML = Object.entries(GAME_META)
       .map(
@@ -146,13 +110,11 @@
     scoreBar.classList.remove('hidden');
     currentGame = type;
     score = { correct: 0, total: 0 };
-    fillIndex = 0;
     quizIndex = 0;
     gameTitle.textContent = GAME_META[type].title;
     updateScore();
 
-    if (type === 'fill') renderFillBlank();
-    else if (type === 'match') renderMatch();
+    if (type === 'match') renderMatch();
     else if (type === 'quiz') renderQuiz();
   }
 
@@ -164,65 +126,6 @@
     currentGame = null;
   }
 
-  function renderFillBlank() {
-    if (fillIndex >= Math.min(words.length, 10)) {
-      return finishGame('fill');
-    }
-
-    const w = words[fillIndex];
-    const q = makeFillPrompt(w);
-
-    gameArea.innerHTML = `
-      <div class="game-header">
-        <button class="btn btn-secondary btn-sm" id="backBtn" type="button">← חזרה</button>
-        <span class="game-progress">שאלה ${fillIndex + 1} מתוך ${Math.min(words.length, 10)}</span>
-      </div>
-      <div class="game-card-play fill-game">
-        <p class="fill-prompt ${q.noContext ? 'fill-definition' : ''}">${escapeHtml(q.text)}</p>
-        ${q.hint ? `<p class="fill-hint muted">${escapeHtml(q.hint)}</p>` : ''}
-        <div class="fill-input-row d-flex gap-2 mb-3">
-          <input type="text" id="fillAnswer" class="form-control fill-input" placeholder="הקלד את המילה..." autocomplete="off" autofocus>
-          <button class="btn btn-primary" id="fillSubmit" type="button">בדוק</button>
-        </div>
-        <div id="fillFeedback" class="game-feedback hidden"></div>
-        <button class="btn btn-secondary hidden" id="fillNext" type="button">הבא →</button>
-      </div>
-    `;
-
-    document.getElementById('backBtn').onclick = backToPicker;
-
-    const input = document.getElementById('fillAnswer');
-    const feedback = document.getElementById('fillFeedback');
-    const nextBtn = document.getElementById('fillNext');
-
-    function check() {
-      const userAnswer = normalize(input.value);
-      const correctAnswer = normalize(q.answer);
-      score.total++;
-      const ok = userAnswer === correctAnswer;
-      if (ok) score.correct++;
-      updateScore();
-
-      feedback.classList.remove('hidden', 'correct', 'wrong');
-      feedback.classList.add(ok ? 'correct' : 'wrong');
-      feedback.innerHTML = ok
-        ? '✓ נכון!'
-        : `✗ לא נכון. התשובה: <strong>${escapeHtml(w.word)}</strong>`;
-      input.disabled = true;
-      document.getElementById('fillSubmit').classList.add('hidden');
-      nextBtn.classList.remove('hidden');
-    }
-
-    document.getElementById('fillSubmit').onclick = check;
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') check();
-    });
-    nextBtn.onclick = () => {
-      fillIndex++;
-      renderFillBlank();
-    };
-  }
-
   function renderMatch() {
     const count = Math.min(words.length, 6);
     matchPairs = shuffle(words).slice(0, count);
@@ -232,7 +135,7 @@
 
     gameArea.innerHTML = `
       <div class="game-header">
-        <button class="btn btn-secondary btn-sm" id="backBtn" type="button">← חזרה</button>
+        <button class="btn btn-secondary btn-sm" id="backBtn" type="button">חזרה</button>
         <span class="game-progress">התאם ${count} זוגות</span>
       </div>
       <div class="match-board">
@@ -333,13 +236,12 @@
 
     gameArea.innerHTML = `
       <div class="game-header">
-        <button class="btn btn-secondary btn-sm" id="backBtn" type="button">← חזרה</button>
+        <button class="btn btn-secondary btn-sm" id="backBtn" type="button">חזרה</button>
         <span class="game-progress">שאלה ${quizIndex + 1} מתוך ${total}</span>
       </div>
       <div class="game-card-play quiz-game">
         <p class="quiz-question">מה המילה?</p>
         <p class="quiz-definition">${escapeHtml(w.definition)}</p>
-        ${w.translation ? `<p class="quiz-hint muted">רמז: ${escapeHtml(w.translation)}</p>` : ''}
         <div class="quiz-options">
           ${options
             .map(
@@ -352,7 +254,7 @@
             .join('')}
         </div>
         <div id="quizFeedback" class="game-feedback hidden"></div>
-        <button class="btn btn-secondary hidden" id="quizNext" type="button">הבא →</button>
+        <button class="btn btn-secondary hidden" id="quizNext" type="button">הבא</button>
       </div>
     `;
 
