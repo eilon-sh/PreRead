@@ -14,10 +14,19 @@
         <div class="card-body py-4">
           <div class="level-badge d-inline-block mb-3">רמה ${s.level}</div>
           <h2 class="h4 mb-3">${escapeHtml(data.user.name || data.user.email)}</h2>
-          <div class="xp-bar-wrap mx-auto" style="max-width:400px">
-            <div class="xp-bar" style="width: ${s.progressPercent}%"></div>
+          <div class="xp-summary mx-auto">
+            <div class="xp-total">
+              <span class="xp-total-value">${Number(s.xp).toLocaleString('he-IL')}</span>
+              <span class="xp-total-label">XP</span>
+            </div>
+            <div class="xp-bar-wrap">
+              <div class="xp-bar" style="width: ${s.progressPercent}%"></div>
+            </div>
+            <p class="xp-progress mb-0">
+              <span class="xp-progress-nums">${Number(s.progressXp).toLocaleString('he-IL')} / ${Number(s.neededXp).toLocaleString('he-IL')}</span>
+              <span class="xp-progress-label">לרמה הבאה</span>
+            </p>
           </div>
-          <p class="xp-text text-muted mt-3 mb-0">${s.xp} XP · ${s.progressXp}/${s.neededXp} לרמה הבאה</p>
         </div>
       </section>
 
@@ -27,7 +36,7 @@
             <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.current_streak}</span><span class="stat-label small text-muted">🔥 רצף יומי</span></div></div>
             <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.longest_streak}</span><span class="stat-label small text-muted">🏅 רצף שיא</span></div></div>
             <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.total_reviews}</span><span class="stat-label small text-muted">🔄 חזרות</span></div></div>
-            <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.mastered_words}</span><span class="stat-label small text-muted">📚 מילים שלוטות</span></div></div>
+            <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.mastered_words}</span><span class="stat-label small text-muted">📚 מילים בשליטה</span></div></div>
             <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${data.achievements.unlocked}</span><span class="stat-label small text-muted">🏆 הישגים</span></div></div>
             <div class="col-6 col-md-4"><div class="stat-item p-3 rounded h-100"><span class="stat-value d-block">${s.daily_reviews_today}</span><span class="stat-label small text-muted">🎯 היום</span></div></div>
           </div>

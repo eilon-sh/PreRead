@@ -86,9 +86,10 @@
         <div class="card-body flashcard-done py-5">
           <h2 class="h4">סיימת לסבב!</h2>
           <p>עברת על ${cards.length} כרטיסים בסבב זה.</p>
-          <button class="btn btn-primary" onclick="location.reload()">התחל מחדש</button>
+          <button class="btn btn-primary" id="restartBtn" type="button">התחל מחדש</button>
         </div>
       `;
+      document.getElementById('restartBtn')?.addEventListener('click', loadCards);
       return;
     }
 
@@ -101,7 +102,7 @@
             <h2 class="flashcard-word display-6 my-3">${escapeHtml(card.word)}</h2>
             ${card.context ? `<p class="flashcard-context text-muted fst-italic">"${escapeHtml(card.context)}"</p>` : ''}
           </div>
-          <div class="flashcard-back ${revealed ? '' : 'hidden'} mt-4 p-3 rounded text-end">
+          <div class="flashcard-back ${revealed ? '' : 'hidden'} mt-4 p-3 rounded text-start">
             <p class="flashcard-definition mb-2"><strong>הגדרה:</strong> ${escapeHtml(card.definition)}</p>
             ${card.translation ? `<p class="flashcard-translation mb-0"><strong>תרגום:</strong> ${escapeHtml(card.translation)}</p>` : ''}
           </div>
