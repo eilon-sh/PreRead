@@ -64,16 +64,14 @@ cd "$APP_DIR"
 npm ci
 
 log "Restarting PM2 process '$PM2_APP_NAME'..."
-if pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
-  pm2 restart "$PM2_APP_NAME" --update-env
+if sudo -u ssm-user pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
+    sudo -u ssm-user pm2 restart "$PM2_APP_NAME" --update-env
 else
-  echo "ERROR: PM2 process '$PM2_APP_NAME' not found. This script only" >&2
-  echo "restarts an already-running process - it does not start one from" >&2
-  echo "scratch, since that would require knowing the original pm2 start" >&2
-  echo "invocation, which is out of scope for a code deploy." >&2
-  exit 1
+    echo "ERROR: PM2 process '$PM2_APP_NAME' not found." >&2
+    exit 1
 fi
-pm2 save
+
+sudo -u ssm-user pm2 save
 
 log "Waiting for the app to report healthy on port $APP_PORT..."
 HEALTHY="false"
@@ -88,7 +86,7 @@ done
 if [[ "$HEALTHY" != "true" ]]; then
   echo "ERROR: App did not respond on port $APP_PORT after restart." >&2
   echo "---- pm2 logs (last 50 lines) ----" >&2
-  pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
+  sudo -u ssm-user pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
   exit 1
 fi
 
