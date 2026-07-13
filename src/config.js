@@ -18,7 +18,7 @@ export default {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     get enabled() {
-      return false//!!(this.clientId && this.clientSecret);
+      return !!(this.clientId && this.clientSecret);
     },
   },
   resend: {
