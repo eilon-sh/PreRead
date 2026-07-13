@@ -58,8 +58,24 @@ esac
 echo "    Prisma binary target to keep: $KEEP_TARGET"
 
 PRISMA_VERSION="$(node -p "require('$BUILD_DIR/node_modules/@prisma/client/package.json').version")"
+
+# Install the `prisma` CLI as a real local package (matched to the exact
+# @prisma/client version) instead of invoking it via ad-hoc `npx --yes`.
+# `prisma generate` cross-checks where its own CLI is installed against
+# where @prisma/client is installed; an ad-hoc npx-cached CLI isn't
+# discoverable via node_modules resolution from this project, which makes
+# that check fail with a misleading "Could not resolve @prisma/client"
+# error even though the client itself resolves fine. --no-save keeps this
+# out of package.json/package-lock.json - it's a build-time-only tool, not
+# a runtime dependency of the deployed function.
+echo "==> Installing prisma CLI (v$PRISMA_VERSION) locally for generation"
+(cd "$BUILD_DIR" && npm install "prisma@${PRISMA_VERSION}" --no-save --no-audit --no-fund)
+
 echo "==> Generating Prisma Client (v$PRISMA_VERSION) against the repo's schema"
-(cd "$BUILD_DIR" && npx --yes "prisma@${PRISMA_VERSION}" generate --schema="$REPO_ROOT/prisma/schema.prisma")
+(cd "$BUILD_DIR" && npx prisma generate --schema="$REPO_ROOT/prisma/schema.prisma")
+
+echo "==> Removing the prisma CLI (build-time only, ~70MB, not needed at runtime)"
+rm -rf "$BUILD_DIR/node_modules/prisma"
 
 PRISMA_CLIENT_DIR="$BUILD_DIR/node_modules/.prisma/client"
 
