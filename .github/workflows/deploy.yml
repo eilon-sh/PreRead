@@ -1,0 +1,163 @@
+name: Deploy
+
+# Every push to main automatically deploys whichever part of the app
+# actually changed:
+#   - lambda/**                                          -> AWS Lambda
+#   - src/**, public/**, prisma/**, package(-lock).json   -> EC2 (via SSM)
+# Both run independently and only when their own paths changed, so an
+# EC2-only change never touches Lambda and vice versa.
+
+on:
+  push:
+    branches:
+      - main
+      - feature/aws-cicd
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: preread-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      lambda: ${{ steps.filter.outputs.lambda }}
+      ec2: ${{ steps.filter.outputs.ec2 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine which parts of the app changed
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            lambda:
+              - 'lambda/**'
+            ec2:
+              - 'src/**'
+              - 'public/**'
+              - 'prisma/**'
+              - 'package.json'
+              - 'package-lock.json'
+
+  deploy-lambda:
+    name: Deploy Lambda (process-document)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.lambda == 'true'
+    runs-on: ubuntu-latest
+    env:
+      LAMBDA_FUNCTION_NAME: preread-process-document
+      GIT_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: lambda/process-document/package-lock.json
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build Lambda deployment package
+        id: build
+        run: bash scripts/deploy/build-lambda-package.sh
+
+      - name: Upload build artifact to GitHub (for audit/debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-process-document-${{ github.sha }}
+          path: ${{ steps.build.outputs.zip_path }}
+          retention-days: 14
+
+      - name: Upload package to S3
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp "${{ steps.build.outputs.zip_path }}" \
+            "s3://${BUCKET}/lambda/${{ steps.build.outputs.zip_filename }}"
+
+      - name: Update Lambda function code
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --s3-bucket "$BUCKET" \
+            --s3-key "lambda/${{ steps.build.outputs.zip_filename }}"
+
+      - name: Wait for the update to finish applying
+        run: |
+          set -euo pipefail
+          aws lambda wait function-updated-v2 --function-name "$LAMBDA_FUNCTION_NAME"
+
+      - name: Verify final state
+        run: |
+          set -euo pipefail
+          aws lambda get-function-configuration \
+            --function-name "$LAMBDA_FUNCTION_NAME" \
+            --query '{State:State,LastUpdateStatus:LastUpdateStatus,CodeSha256:CodeSha256}'
+
+  deploy-ec2:
+    name: Deploy EC2 (Express app)
+    needs: detect-changes
+    if: needs.detect-changes.outputs.ec2 == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GIT_SHA: ${{ github.sha }}
+      EC2_TAG_KEY: Name
+      EC2_TAG_VALUE: preread-app
+      APP_DIR: /opt/preread/app
+      PM2_APP_NAME: preread
+      APP_PORT: "3000"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build EC2 source bundle
+        id: build
+        run: bash scripts/deploy/build-ec2-package.sh
+
+      - name: Upload build artifact to GitHub (for audit/debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-app-${{ github.sha }}
+          path: ${{ steps.build.outputs.archive_path }}
+          retention-days: 14
+
+      - name: Upload bundle to S3
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp "${{ steps.build.outputs.archive_path }}" \
+            "s3://${BUCKET}/ec2/${{ steps.build.outputs.archive_filename }}"
+
+      - name: Deploy to EC2 via SSM (no SSH, no git pull)
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          export BUNDLE_S3_URI="s3://${BUCKET}/ec2/${{ steps.build.outputs.archive_filename }}"
+          bash scripts/deploy/run-ssm-deploy.sh
