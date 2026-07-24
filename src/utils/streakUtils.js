@@ -1,3 +1,11 @@
+/**
+ * Compute streak fields after a study day.
+ * Same calendar day → unchanged. Consecutive day → increment. Gap or first day → reset to 1.
+ *
+ * @param {{ lastStudyDate: string | null, currentStreak: number, longestStreak: number }} stats
+ * @param {string} todayStr ISO date YYYY-MM-DD
+ * @returns {{ currentStreak: number, longestStreak: number }}
+ */
 export function computeStreakUpdate(stats, todayStr) {
   if (stats.lastStudyDate === todayStr) {
     return {

@@ -9,8 +9,8 @@
   let score = { correct: 0, total: 0 };
   let quizIndex = 0;
   let matchPairs = [];
-  let matchSelected = null;
   let matchSolved = new Set();
+  let matchLocked = false;
 
   const params = new URLSearchParams(window.location.search);
   const documentId = params.get('documentId') || '';
@@ -129,80 +129,89 @@
   function renderMatch() {
     const count = Math.min(words.length, 6);
     matchPairs = shuffle(words).slice(0, count);
-    matchSelected = null;
     matchSolved = new Set();
+    matchLocked = false;
     const defs = shuffle(matchPairs.map((w) => ({ id: w.id, text: w.definition })));
+
+    const optionsHtml = defs
+      .map(
+        (d) => `
+          <button class="match-option" data-id="${d.id}" type="button">${escapeHtml(d.text)}</button>
+        `,
+      )
+      .join('');
 
     gameArea.innerHTML = `
       <div class="game-header">
         <button class="btn btn-secondary btn-sm" id="backBtn" type="button">חזרה</button>
         <span class="game-progress">התאם ${count} זוגות</span>
       </div>
-      <div class="match-board">
-        <div class="match-col" id="matchWords">
-          ${matchPairs
-            .map(
-              (w) => `
-            <button class="match-item" data-id="${w.id}" data-side="word" type="button">${escapeHtml(w.word)}</button>
-          `,
-            )
-            .join('')}
-        </div>
-        <div class="match-col" id="matchDefs">
-          ${defs
-            .map(
-              (d) => `
-            <button class="match-item" data-id="${d.id}" data-side="def" type="button">${escapeHtml(d.text)}</button>
-          `,
-            )
-            .join('')}
-        </div>
+      <div class="match-rows">
+        ${matchPairs
+          .map(
+            (w) => `
+          <div class="match-row" data-word-id="${w.id}">
+            <div class="match-row-word">${escapeHtml(w.word)}</div>
+            <div class="match-row-options">${optionsHtml}</div>
+          </div>
+        `,
+          )
+          .join('')}
       </div>
       <div id="matchFeedback" class="game-feedback hidden"></div>
     `;
 
     document.getElementById('backBtn').onclick = backToPicker;
 
-    gameArea.querySelectorAll('.match-item').forEach((btn) => {
-      btn.addEventListener('click', () => handleMatchClick(btn));
+    gameArea.querySelectorAll('.match-option').forEach((btn) => {
+      btn.addEventListener('click', () => handleMatchOptionClick(btn));
     });
   }
 
-  function handleMatchClick(btn) {
-    if (btn.classList.contains('solved') || btn.classList.contains('wrong-flash')) return;
+  function clearRowSelection(row) {
+    row.querySelectorAll('.match-option').forEach((opt) => {
+      opt.classList.remove('selected');
+    });
+  }
+
+  function handleMatchOptionClick(btn) {
+    if (matchLocked || btn.disabled) return;
+
+    const row = btn.closest('.match-row');
+    if (!row || row.classList.contains('solved') || btn.classList.contains('wrong-flash')) return;
 
     const feedback = document.getElementById('matchFeedback');
+    const wordId = row.dataset.wordId;
+    const defId = btn.dataset.id;
 
-    if (!matchSelected) {
-      matchSelected = btn;
-      btn.classList.add('selected');
-      return;
-    }
+    // Radio within row: only one selected option
+    clearRowSelection(row);
+    btn.classList.add('selected');
 
-    if (matchSelected === btn) {
-      btn.classList.remove('selected');
-      matchSelected = null;
-      return;
-    }
+    // Exclusive definition across open rows
+    gameArea.querySelectorAll('.match-row:not(.solved)').forEach((otherRow) => {
+      if (otherRow === row) return;
+      otherRow.querySelectorAll(`.match-option.selected[data-id="${defId}"]`).forEach((opt) => {
+        opt.classList.remove('selected');
+      });
+    });
 
-    if (matchSelected.dataset.side === btn.dataset.side) {
-      matchSelected.classList.remove('selected');
-      matchSelected = btn;
-      btn.classList.add('selected');
-      return;
-    }
-
-    const id1 = matchSelected.dataset.id;
-    const id2 = btn.dataset.id;
     score.total++;
 
-    if (id1 === id2) {
+    if (defId === wordId) {
       score.correct++;
-      matchSolved.add(id1);
-      matchSelected.classList.remove('selected');
-      matchSelected.classList.add('solved');
+      matchSolved.add(wordId);
+      row.classList.add('solved');
+      btn.classList.remove('selected');
       btn.classList.add('solved');
-      matchSelected = null;
+      row.querySelectorAll('.match-option').forEach((opt) => {
+        opt.disabled = true;
+      });
+      // Definition already used — disable it on remaining rows
+      gameArea.querySelectorAll(`.match-row:not(.solved) .match-option[data-id="${defId}"]`).forEach((opt) => {
+        opt.disabled = true;
+        opt.classList.remove('selected');
+      });
       updateScore();
       feedback.classList.add('hidden');
 
@@ -210,19 +219,17 @@
         setTimeout(() => finishGame('match'), 600);
       }
     } else {
-      matchSelected.classList.add('wrong-flash');
+      matchLocked = true;
       btn.classList.add('wrong-flash');
       feedback.classList.remove('hidden', 'correct');
       feedback.classList.add('wrong');
       feedback.textContent = 'לא נכון, נסה שוב';
-      const prev = matchSelected;
+      updateScore();
       setTimeout(() => {
-        prev.classList.remove('selected', 'wrong-flash');
-        btn.classList.remove('wrong-flash');
-        matchSelected = null;
+        btn.classList.remove('selected', 'wrong-flash');
+        matchLocked = false;
         feedback.classList.add('hidden');
       }, 700);
-      updateScore();
     }
   }
 

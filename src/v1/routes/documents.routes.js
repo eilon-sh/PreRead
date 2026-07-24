@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { extractLimiter, uploadLimiter } from '#middleware/security.js';
+import { uploadLimiter } from '#middleware/security.js';
 import * as documentsController from '../controllers/documents.controller.js';
 
 const router = express.Router();
@@ -21,7 +21,7 @@ const upload = multer({
 
 router.get('/', documentsController.list);
 router.get('/:id', documentsController.getById);
-router.post('/', uploadLimiter, extractLimiter, upload.single('pdf'), documentsController.upload);
+router.post('/', uploadLimiter, upload.single('pdf'), documentsController.upload);
 router.delete('/:id', documentsController.remove);
 
 export default router;

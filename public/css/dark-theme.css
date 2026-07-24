@@ -83,13 +83,18 @@
   box-shadow: var(--shadow-glow);
 }
 
-[data-theme='dark'] .match-item,
+[data-theme='dark'] .match-option,
 [data-theme='dark'] .quiz-option {
   border-color: var(--border-strong);
   background: var(--surface-3);
 }
 
-[data-theme='dark'] .match-item.selected,
+[data-theme='dark'] .match-row {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+[data-theme='dark'] .match-option.selected,
 [data-theme='dark'] .quiz-option:hover:not(.answered) {
   border-color: var(--primary);
   box-shadow: 0 0 0 1px rgba(139, 154, 255, 0.2);

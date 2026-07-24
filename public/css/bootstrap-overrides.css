@@ -224,7 +224,7 @@
 }
 
 .game-card,
-.match-item,
+.match-option,
 .quiz-option,
 .theme-toggle,
 .nav-logout,
@@ -233,14 +233,14 @@
 }
 
 .game-card,
-.match-item,
+.match-option,
 .quiz-option {
   background-color: var(--surface-2);
   color: var(--text);
 }
 
 .game-card:hover,
-.match-item:hover:not(.solved),
+.match-option:hover:not(:disabled):not(.solved),
 .quiz-option:hover:not(.answered) {
   color: var(--text);
 }

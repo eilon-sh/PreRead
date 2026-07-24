@@ -1,6 +1,11 @@
 const SESSION_CACHE_TTL_MS = 60_000;
 const cache = new Map();
 
+/**
+ * Return a cached session for `key`, or null if missing/expired.
+ * @param {string | null | undefined} key
+ * @returns {unknown | null}
+ */
 export function getCachedSession(key) {
   if (!key) return null;
 
@@ -15,6 +20,12 @@ export function getCachedSession(key) {
   return entry.session;
 }
 
+/**
+ * Store a session under `key` with a short TTL. No-op if key or session is falsy.
+ * @param {string | null | undefined} key
+ * @param {unknown} session
+ * @returns {void}
+ */
 export function setCachedSession(key, session) {
   if (!key || !session) return;
 
@@ -24,6 +35,11 @@ export function setCachedSession(key, session) {
   });
 }
 
+/**
+ * Extract the better-auth session token from a Cookie header for use as a cache key.
+ * @param {string | null | undefined} cookieHeader
+ * @returns {string | null}
+ */
 export function extractSessionCacheKey(cookieHeader) {
   if (!cookieHeader) return null;
 
