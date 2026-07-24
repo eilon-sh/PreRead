@@ -114,11 +114,11 @@
               : `
               <p class="rate-label fw-semibold mb-3">עד כמה ידעת?</p>
               <div class="rate-buttons d-flex flex-wrap justify-content-center gap-2">
-                <button class="btn rate-btn rate-0" data-q="0">שוב<br><small>0</small></button>
-                <button class="btn rate-btn rate-2" data-q="2">קשה<br><small>2</small></button>
-                <button class="btn rate-btn rate-3" data-q="3">טוב<br><small>3</small></button>
-                <button class="btn rate-btn rate-4" data-q="4">קל<br><small>4</small></button>
-                <button class="btn rate-btn rate-5" data-q="5">מושלם<br><small>5</small></button>
+                <button class="btn rate-btn rate-0" data-q="0">שוב</button>
+                <button class="btn rate-btn rate-2" data-q="2">קשה</button>
+                <button class="btn rate-btn rate-3" data-q="3">טוב</button>
+                <button class="btn rate-btn rate-4" data-q="4">קל</button>
+                <button class="btn rate-btn rate-5" data-q="5">מושלם</button>
               </div>
             `
           }

@@ -82,51 +82,82 @@
   color: var(--error);
 }
 
-.match-board {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.match-col {
+.match-rows {
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+}
+
+.match-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.35fr) 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.match-row.solved {
+  border-color: var(--success);
+  background: var(--status-success-bg);
+}
+
+.match-row-word {
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding-top: 0.35rem;
+}
+
+.match-row.solved .match-row-word {
+  color: var(--success);
+}
+
+.match-row-options {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.match-item {
-  padding: 0.85rem 1rem;
+.match-option {
+  padding: 0.55rem 0.85rem;
   border: 2px solid var(--border);
   border-radius: 10px;
   cursor: pointer;
   text-align: right;
-  font-size: 0.95rem;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  line-height: 1.35;
   transition:
     border-color 0.15s,
     background 0.15s;
 }
 
-.match-item:hover:not(.solved) {
+.match-option:hover:not(:disabled):not(.solved) {
   border-color: var(--primary);
 }
 
-.match-item.selected {
+.match-option.selected {
   border-color: var(--primary);
   background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
-.match-item.solved {
+.match-option.solved {
   border-color: var(--success);
   background: var(--status-success-bg);
   color: var(--success);
   cursor: default;
-  opacity: 0.85;
 }
 
-.match-item.wrong-flash {
+.match-option.wrong-flash {
   border-color: var(--error);
   background: var(--status-error-bg);
+}
+
+.match-option:disabled:not(.solved) {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .quiz-question {
@@ -217,8 +248,21 @@
 }
 
 @media (max-width: 600px) {
-  .match-board {
+  .match-row {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .match-row-word {
+    padding-top: 0;
+  }
+
+  .match-row-options {
+    flex-direction: column;
+  }
+
+  .match-option {
+    width: 100%;
   }
 
   .game-done-actions {
