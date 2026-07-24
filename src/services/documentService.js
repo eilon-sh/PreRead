@@ -1,6 +1,5 @@
 import path from 'node:path';
 import { fileTypeFromBuffer } from 'file-type';
-import config from '#config.js';
 import prisma from '#db/prisma.js';
 import { uploadPdfToS3 } from '#services/s3Service.js';
 import { decodeUploadedFilename } from '#utils/filenameUtils.js';
@@ -55,21 +54,11 @@ export async function failStuckProcessingDocuments() {
 
 function mapDocument(d, wordCount) {
   const processingState = getDocumentProcessingState(d.processingStatus);
-
   return {
     id: d.id,
-    user_id: d.userId,
     filename: decodeUploadedFilename(d.filename),
     min_cefr: d.minCefr ?? null,
-    s3_key: d.s3Key,
-    s3_bucket: config.s3UploadBucket,
-    created_at: d.createdAt.toISOString(),
     processing_status: processingState.status,
-    processing_error: d.processingError ?? null,
-    processed_at:
-      processingState.status === 'ready'
-        ? (d.processedAt?.toISOString() ?? d.createdAt.toISOString())
-        : null,
     ...(wordCount !== undefined ? { word_count: wordCount } : {}),
   };
 }

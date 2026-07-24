@@ -106,20 +106,6 @@ export const uploadLimiter = rateLimit({
   },
 });
 
-export const extractLimiter = rateLimit({
-  windowMs: 60 * secend,
-  max: config.rateLimit.extractMax,
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (_req, res, _next, options) => {
-    res.status(options.statusCode).json({
-      error: 'הגעת למגבלת חילוץ המילים לשעה. נסה שוב מאוחר יותר.',
-      code: 'RATE_LIMITED',
-      retryAfter: res.getHeader('Retry-After') ?? null,
-    });
-  },
-});
-
 export const passwordResetEmailLimiter = rateLimit({
   windowMs: config.rateLimit.passwordResetEmailWindowMs,
   max: config.rateLimit.passwordResetEmailMax,

@@ -962,55 +962,35 @@ components:
 
     DocumentSummary:
       type: object
-      required: [id, user_id, filename, created_at, word_count, processing_status]
+      required: [id, filename, min_cefr, word_count, processing_status]
       properties:
         id:
           type: integer
-        user_id:
-          type: string
         filename:
           type: string
-        s3_key:
+        min_cefr:
           type: [string, 'null']
-        s3_bucket:
-          type: [string, 'null']
-        created_at:
-          type: string
-          format: date-time
         word_count:
           type: integer
         processing_status:
           type: string
           enum: [processing, ready, failed]
-        processed_at:
-          type: string
-          format: date-time
-          nullable: true
 
     Document:
       type: object
-      required: [id, user_id, filename, created_at, processing_status]
+      required: [id, filename, min_cefr, processing_status]
       properties:
         id:
           type: integer
-        user_id:
-          type: string
         filename:
           type: string
-        s3_key:
+        min_cefr:
           type: [string, 'null']
-        s3_bucket:
-          type: [string, 'null']
-        created_at:
-          type: string
-          format: date-time
         processing_status:
           type: string
           enum: [processing, ready, failed]
-        processed_at:
-          type: string
-          format: date-time
-          nullable: true
+        word_count:
+          type: integer
 
     DocumentUploadResponse:
       type: object

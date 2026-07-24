@@ -1,3 +1,4 @@
+/** Allowed CEFR levels for a minimum-level filter. */
 export const MIN_CEFR_LEVELS = Object.freeze(['B1', 'B2', 'C1', 'C2']);
 
 /**
