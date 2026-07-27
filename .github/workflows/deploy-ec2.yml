@@ -35,8 +35,7 @@ jobs:
       APP_DIR: /opt/preread/app
       PM2_APP_NAME: preread
       APP_PORT: "${{ secrets.PORT }}"
-      # Written to /opt/preread/app/.env on deploy (upsert). Add KEY=value lines.
-      # Empty values are skipped.
+      # Written wholesale to /opt/preread/app/.env on deploy. Add KEY=value lines.
       APP_ENV: |
         NODE_ENV=production
         PORT=${{ secrets.PORT }}
@@ -89,7 +88,7 @@ jobs:
 
       - name: Upload bundle to S3
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           set -euo pipefail
           aws s3 cp "${{ steps.build.outputs.archive_path }}" \
@@ -97,7 +96,7 @@ jobs:
 
       - name: Deploy to EC2 via SSM (no SSH, no git pull)
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
           ARCHIVE_FILENAME: ${{ steps.build.outputs.archive_filename }}
         run: |
           set -euo pipefail
@@ -126,9 +125,8 @@ jobs:
             exit 1
           fi
 
-          if [[ ! -f "$APP_DIR/.env" ]]; then
-            echo "ERROR: $APP_DIR/.env not found. Refusing to deploy - a missing .env" >&2
-            echo "almost certainly means this is the wrong directory." >&2
+          if [[ -z "${APP_ENV:-}" && ! -f "$APP_DIR/.env" ]]; then
+            echo "ERROR: No APP_ENV provided and $APP_DIR/.env not found." >&2
             exit 1
           fi
 
@@ -145,29 +143,13 @@ jobs:
           cd "$APP_DIR"
           npm ci
 
-          if [[ -n "${APP_ENV_B64:-}" ]]; then
-            log "Applying APP_ENV to $APP_DIR/.env..."
-            ENV_FILE="$APP_DIR/.env"
-            while IFS= read -r line || [[ -n "$line" ]]; do
-              line="${line#"${line%%[![:space:]]*}"}"
-              [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
-              key="${line%%=*}"
-              val="${line#*=}"
-              key="${key%"${key##*[![:space:]]}"}"
-              [[ -z "$key" || -z "$val" ]] && continue
-              tmp="$(mktemp)"
-              awk -v k="$key" -v v="$val" '
-                BEGIN { found = 0 }
-                $0 ~ ("^" k "=") { print k "=" v; found = 1; next }
-                { print }
-                END { if (!found) print k "=" v }
-              ' "$ENV_FILE" > "$tmp" && mv "$tmp" "$ENV_FILE"
-              log "Set $key"
-            done < <(printf '%s' "$APP_ENV_B64" | base64 -d)
+          if [[ -n "${APP_ENV:-}" ]]; then
+            log "Writing APP_ENV to $APP_DIR/.env..."
+            printf '%s' "$APP_ENV" > "$APP_DIR/.env"
           fi
 
           # SSM runs as root; PM2 runs as ssm-user. Ensure the app tree
-          # (especially .env rewritten via mktemp+mv) stays readable by PM2.
+          # stays readable by PM2 after tar/npm/.env writes as root.
           log "Ensuring ssm-user owns $APP_DIR..."
           chown -R ssm-user:ssm-user "$APP_DIR"
           chmod 600 "$APP_DIR/.env"
@@ -206,14 +188,12 @@ jobs:
           # Dedent heredoc body (YAML block indent becomes leading spaces in the script).
           REMOTE_SCRIPT="$(printf '%s\n' "$REMOTE_SCRIPT" | sed -e 's/^          //')"
 
-          APP_ENV_B64="$(printf '%s' "${APP_ENV:-}" | base64 -w0)"
-
           COMMAND_BODY="$(
             printf "export BUNDLE_S3_URI=%q\n" "$BUNDLE_S3_URI"
             printf "export APP_DIR=%q\n" "$APP_DIR"
             printf "export PM2_APP_NAME=%q\n" "$PM2_APP_NAME"
             printf "export APP_PORT=%q\n" "$APP_PORT"
-            printf "export APP_ENV_B64=%q\n" "$APP_ENV_B64"
+            printf "export APP_ENV=%q\n" "${APP_ENV:-}"
             printf '%s\n' "$REMOTE_SCRIPT"
           )"
 
