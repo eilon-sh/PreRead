@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload to S3 and update Lambda
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           set -euo pipefail
           KEY="lambda/process-document-${{ github.sha }}.zip"

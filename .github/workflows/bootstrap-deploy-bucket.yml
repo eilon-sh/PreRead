@@ -28,11 +28,11 @@ jobs:
       - name: Validate required configuration
         run: |
           set -euo pipefail
-          if [[ -z "${{ vars.DEPLOY_ARTIFACTS_BUCKET }}" ]]; then
+          if [[ -z "${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}" ]]; then
             echo "::error::Repository variable DEPLOY_ARTIFACTS_BUCKET is not set. See infra-setup/bootstrap/."
             exit 1
           fi
-          echo "Target bucket: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}"
+          echo "Target bucket: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}"
 
       - name: Configure AWS credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
@@ -42,7 +42,7 @@ jobs:
 
       - name: Create bucket if it does not already exist
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
           REGION: ${{ secrets.AWS_REGION }}
         run: |
           set -euo pipefail
@@ -60,7 +60,7 @@ jobs:
 
       - name: Block all public access
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           set -euo pipefail
           aws s3api put-public-access-block --bucket "$BUCKET" \
@@ -69,7 +69,7 @@ jobs:
 
       - name: Enable default encryption
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           set -euo pipefail
           aws s3api put-bucket-encryption --bucket "$BUCKET" \
@@ -78,7 +78,7 @@ jobs:
 
       - name: Expire old deployment artifacts after 14 days
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           set -euo pipefail
           aws s3api put-bucket-lifecycle-configuration --bucket "$BUCKET" \
@@ -87,6 +87,6 @@ jobs:
 
       - name: Done
         env:
-          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          BUCKET: ${{ secrets.DEPLOY_ARTIFACTS_BUCKET }}
         run: |
           echo "Deploy artifacts bucket ready: $BUCKET"

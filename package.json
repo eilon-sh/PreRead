@@ -19,10 +19,6 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "test": "node test/e2e.js",
-    "test:unit": "node test/parseIntUtils.test.js",
-    "ec2:deploy": "node infra/deploy-ec2.mjs",
-    "ec2:push": "node infra/push-app.mjs",
-    "ec2:inspect": "node scripts/inspect-ec2.mjs",
     "check": "prettier --check .",
     "fix": "prettier --write ."
   },
@@ -46,9 +42,6 @@
     "resend": "^6.17.1"
   },
   "devDependencies": {
-    "@aws-sdk/client-ec2": "^3.1095.0",
-    "@aws-sdk/client-ssm": "^3.1095.0",
-    "@aws-sdk/client-sts": "^3.1095.0",
     "@pdf-lib/fontkit": "^1.1.1",
     "pdf-lib": "^1.17.1",
     "prettier": "^3.9.4",
