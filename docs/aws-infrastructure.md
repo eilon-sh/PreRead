@@ -374,7 +374,6 @@ const s3Record = body.Records[0];
 | ------------------------------- | ------------- | ------------------------------------------------ |
 | `BEDROCK_MODEL_ID`              | CFN Parameter | `global.anthropic.claude-sonnet-4-20250514-v1:0` |
 | `BEDROCK_TEMPERATURE`           | CFN           | `0`                                              |
-| `BEDROCK_TOKEN_EXPIRES_SECONDS` | CFN           | `43200`                                          |
 | `DATABASE_URL_SECRET_ARN`       | CFN Parameter | ARN של `preread/database-url`                    |
 
 > בקוד (`processor.js`) ברירת המחדל למודל היא `global.anthropic.claude-sonnet-4-20250514-v1:0` — ודאו שה-`BEDROCK_MODEL_ID` ב-Lambda תואם למודל שביקשתם ב-Bedrock Console (inference profile, לא foundation model ID ישיר).
@@ -904,7 +903,6 @@ node infra/diagnose.mjs
 | משתנה `.env`                  | שירות          | שימוש                                                             |
 | ----------------------------- | -------------- | ----------------------------------------------------------------- |
 | `DATABASE_URL`                | RDS            | Express + Prisma; מסונכרן ל-Secrets Manager ב-deploy              |
-| `DATABASE_URL_PROD`           | RDS            | אופציונלי — שמירת URL פרודקשן אחרי `db:setup-dev`                 |
 | `AWS_REGION`                  | כל AWS SDK     | `us-east-1`                                                       |
 | `AWS_ACCESS_KEY_ID`           | IAM User       | העלאות S3 מהאפליקציה + deploy                                     |
 | `AWS_SECRET_ACCESS_KEY`       | IAM User       | כנ״ל                                                              |

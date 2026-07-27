@@ -23,6 +23,7 @@ const BEDROCK_SYSTEM_PROMPT =
   'Never output words from prompt examples or your own invention. ' +
   'Languages: "word" and "context" must be English only; "definition" and "translation" must be Hebrew only. ' +
   'Never use any other language in any field. ' +
+  'Before including any word, systematically verify it against every extraction rule; skip it if you cannot justify all checks. ' +
   'Return only the header row ' +
   CSV_COLUMNS +
   ' when the source is mostly non-English or has no suitable vocabulary. ' +
@@ -89,8 +90,17 @@ ${buildCefrFilterSection(minCefr)}
 - "translation" must be a concise Hebrew equivalent (1–3 words when possible).
 - "definition" must be a short, clear Hebrew definition (one sentence max) in neutral dictionary style — never English.
 
+## Systematic verification (before each row)
+Before including any word, evaluate it against every rule below and only include it if you can justify all of them:
+1. Verbatim in Source PDF (not from this prompt)
+2. Exact quoteable English context from the PDF
+3. CEFR level on the full A1–C2 scale, and level ≥ **${level}**
+4. Academic study value for a university student
+5. Hebrew-only definition + translation; English-only word + context
+If any check fails, skip the word. Do not write the justifications in the output.
+
 ## Output
-Return **all qualifying words** from the Source PDF (at or above **${level}** only).
+After verification, return **all qualifying words** from the Source PDF (at or above **${level}** only).
 - Include each word **once only**, even if it appears multiple times in the text.
 - Sort rows **alphabetically** by word (A→Z).
 - Always double-quote definition, context, and translation (even when they have no commas).
@@ -98,7 +108,7 @@ Return **all qualifying words** from the Source PDF (at or above **${level}** on
 - If **no qualifying English words** appear in the Source PDF, return exactly:
 \`${CSV_COLUMNS}\`
 
-Return ONLY valid CSV - no markdown fences, no commentary.
+Return ONLY valid CSV - no markdown fences, no commentary, no justifications.
 Template:
 ${CSV_COLUMNS}
 <row1>
