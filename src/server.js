@@ -49,6 +49,7 @@ app.all('/api/auth/{*splat}', authLimiter, toNodeHandler(auth));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.locals.googleEnabled = config.google.enabled;
+app.locals.isProduction = config.isProduction;
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
     maxAge: config.isProduction ? '1d' : 0,
