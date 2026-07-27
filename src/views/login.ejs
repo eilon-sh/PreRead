@@ -37,7 +37,13 @@
                 class="form-label-row d-flex align-items-center justify-content-between gap-2 mb-1"
               >
                 <label for="password" class="form-label fw-semibold mb-0">סיסמה</label>
-                <a href="/forgot-password" class="auth-forgot-link small">שכחת סיסמה?</a>
+                <%#
+                  שירות איפוס הסיסמה (Resend) מוכן ועובד — השתמשנו בו רק כדי לבדוק שהזרימה פועלת.
+                  מוסתר בפרודקשן; בעתיד אפשר להציג שוב אחרי אימות דומיין אם נרצה להפעיל.
+                %>
+                <% if (!isProduction) { %>
+                  <a href="/forgot-password" class="auth-forgot-link small">שכחת סיסמה?</a>
+                <% } %>
               </div>
               <input
                 type="password"
