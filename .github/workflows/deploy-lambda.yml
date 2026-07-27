@@ -1,0 +1,90 @@
+name: Deploy Lambda
+
+# Builds the process-document Lambda zip and updates the function code.
+# Runs on push to main when lambda/ changes, or manually.
+
+on:
+  push:
+    branches: [main]
+    paths: [lambda/**]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FUNCTION_NAME: preread-process-document
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: lambda/process-document/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build Lambda package
+        run: |
+          set -euo pipefail
+
+          BUILD=.build/lambda
+          rm -rf "$BUILD"
+          mkdir -p "$BUILD"
+
+          cp lambda/process-document/{index.js,processor.js,package.json,package-lock.json} "$BUILD/"
+
+          # Production deps only
+          (cd "$BUILD" && npm ci --omit=dev)
+
+          # Prisma Client (needs matching engine for Lambda's arch)
+          ARCH=$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'Architectures[0]' --output text)
+
+          case "$ARCH" in
+            x86_64) KEEP=rhel-openssl-3.0.x ;;
+            arm64)  KEEP=linux-arm64-openssl-3.0.x ;;
+            *) echo "Unknown architecture: $ARCH"; exit 1 ;;
+          esac
+
+          PRISMA_VER=$(node -p "require('./$BUILD/node_modules/@prisma/client/package.json').version")
+          (cd "$BUILD" && npm install "prisma@${PRISMA_VER}" --no-save)
+          (cd "$BUILD" && npx prisma generate --schema="$GITHUB_WORKSPACE/prisma/schema.prisma")
+          rm -rf "$BUILD/node_modules/prisma"
+
+          # Drop unused Prisma engines to keep the zip small
+          find "$BUILD/node_modules/.prisma/client" -maxdepth 1 -type f \
+            \( -iname '*query_engine*' -o -iname '*query-engine*' \) \
+            ! -iname "*${KEEP}*" ! -iname '*_bg.*' -delete
+
+          ZIP=.build/lambda.zip
+          rm -f "$ZIP"
+          (cd "$BUILD" && zip -X -r -q "../lambda.zip" index.js processor.js package.json node_modules)
+          echo "Built $ZIP ($(du -m "$ZIP" | cut -f1) MB)"
+
+      - name: Upload to S3 and update Lambda
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          KEY="lambda/process-document-${{ github.sha }}.zip"
+
+          aws s3 cp .build/lambda.zip "s3://${BUCKET}/${KEY}"
+          aws lambda update-function-code \
+            --function-name "$FUNCTION_NAME" \
+            --s3-bucket "$BUCKET" \
+            --s3-key "$KEY"
+          aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
+
+          echo "Lambda $FUNCTION_NAME updated."

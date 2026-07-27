@@ -1,0 +1,260 @@
+name: Deploy EC2
+
+# Deploys the Express app to EC2 (via SSM) when site/app paths change.
+# Manual runs via workflow_dispatch always deploy regardless of paths.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'prisma/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: preread-deploy-ec2-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-ec2:
+    name: Deploy EC2 (Express app)
+    runs-on: ubuntu-latest
+    env:
+      GIT_SHA: ${{ github.sha }}
+      EC2_TAG_KEY: Name
+      EC2_TAG_VALUE: preread-app
+      APP_DIR: /opt/preread/app
+      PM2_APP_NAME: preread
+      APP_PORT: "${{ secrets.PORT }}"
+      # Written to /opt/preread/app/.env on deploy (upsert). Add KEY=value lines.
+      # Empty values are skipped.
+      APP_ENV: |
+        NODE_ENV=production
+        PORT=${{ secrets.PORT }}
+        BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
+        TRUST_PROXY=true
+        BETTER_AUTH_SECRET=${ secrets.BETTER_AUTH_SECRET }}
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        CSRF_SECRET=${{ secrets.CSRF_SECRET }}
+        S3_UPLOAD_BUCKET=${{ secrets.S3_UPLOAD_BUCKET }}
+        AWS_REGION=${{ secrets.AWS_REGION }}
+        GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+        RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+        RESEND_FROM_EMAIL=Preread <onboarding@resend.dev>
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build EC2 source bundle
+        id: build
+        run: |
+          set -euo pipefail
+          mkdir -p .build
+          ARCHIVE=".build/app-${GIT_SHA}.tar.gz"
+          rm -f "$ARCHIVE"
+          tar -czf "$ARCHIVE" \
+            src \
+            public \
+            prisma/schema.prisma \
+            package.json \
+            package-lock.json
+          SIZE_KB="$(du -k "$ARCHIVE" | cut -f1)"
+          echo "Built $ARCHIVE (${SIZE_KB} KB)"
+          echo "archive_path=$ARCHIVE" >> "$GITHUB_OUTPUT"
+          echo "archive_filename=$(basename "$ARCHIVE")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifact to GitHub (for audit/debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-app-${{ github.sha }}
+          path: ${{ steps.build.outputs.archive_path }}
+          retention-days: 14
+
+      - name: Upload bundle to S3
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp "${{ steps.build.outputs.archive_path }}" \
+            "s3://${BUCKET}/ec2/${{ steps.build.outputs.archive_filename }}"
+
+      - name: Deploy to EC2 via SSM (no SSH, no git pull)
+        env:
+          BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
+          ARCHIVE_FILENAME: ${{ steps.build.outputs.archive_filename }}
+        run: |
+          set -euo pipefail
+          BUNDLE_S3_URI="s3://${BUCKET}/ec2/${ARCHIVE_FILENAME}"
+
+          # Remote script body (quoted heredoc — runs on the instance, not the runner).
+          REMOTE_SCRIPT=$(cat <<'REMOTE_EOF'
+          set -euo pipefail
+
+          : "${BUNDLE_S3_URI:?BUNDLE_S3_URI must be set}"
+          : "${APP_DIR:?APP_DIR must be set}"
+          : "${PM2_APP_NAME:?PM2_APP_NAME must be set}"
+          : "${APP_PORT:?APP_PORT must be set}"
+
+          log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
+
+          TMP_BUNDLE="$(mktemp /tmp/preread-deploy-XXXXXX.tar.gz)"
+          cleanup() { rm -f "$TMP_BUNDLE"; }
+          trap cleanup EXIT
+
+          log "Deploying $BUNDLE_S3_URI to $APP_DIR"
+
+          if [[ ! -d "$APP_DIR" ]]; then
+            echo "ERROR: $APP_DIR does not exist. This script only updates an existing" >&2
+            echo "deployment - it does not provision a new one." >&2
+            exit 1
+          fi
+
+          if [[ ! -f "$APP_DIR/.env" ]]; then
+            echo "ERROR: $APP_DIR/.env not found. Refusing to deploy - a missing .env" >&2
+            echo "almost certainly means this is the wrong directory." >&2
+            exit 1
+          fi
+
+          log "Downloading bundle from S3..."
+          aws s3 cp "$BUNDLE_S3_URI" "$TMP_BUNDLE"
+
+          log "Removing previous src/, public/, prisma/ (leaving .env and node_modules untouched)..."
+          rm -rf "${APP_DIR:?}/src" "${APP_DIR:?}/public" "${APP_DIR:?}/prisma"
+
+          log "Extracting new bundle into $APP_DIR..."
+          tar -xzf "$TMP_BUNDLE" -C "$APP_DIR"
+
+          log "Installing dependencies (npm ci, includes postinstall: prisma generate)..."
+          cd "$APP_DIR"
+          npm ci
+
+          if [[ -n "${APP_ENV_B64:-}" ]]; then
+            log "Applying APP_ENV to $APP_DIR/.env..."
+            ENV_FILE="$APP_DIR/.env"
+            while IFS= read -r line || [[ -n "$line" ]]; do
+              line="${line#"${line%%[![:space:]]*}"}"
+              [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
+              key="${line%%=*}"
+              val="${line#*=}"
+              key="${key%"${key##*[![:space:]]}"}"
+              [[ -z "$key" || -z "$val" ]] && continue
+              tmp="$(mktemp)"
+              awk -v k="$key" -v v="$val" '
+                BEGIN { found = 0 }
+                $0 ~ ("^" k "=") { print k "=" v; found = 1; next }
+                { print }
+                END { if (!found) print k "=" v }
+              ' "$ENV_FILE" > "$tmp" && mv "$tmp" "$ENV_FILE"
+              log "Set $key"
+            done < <(printf '%s' "$APP_ENV_B64" | base64 -d)
+          fi
+
+          log "Restarting PM2 process '$PM2_APP_NAME'..."
+          if sudo -u ssm-user pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
+            sudo -u ssm-user pm2 restart "$PM2_APP_NAME" --update-env
+          else
+            echo "ERROR: PM2 process '$PM2_APP_NAME' not found." >&2
+            exit 1
+          fi
+
+          sudo -u ssm-user pm2 save
+
+          log "Waiting for the app to report healthy on port $APP_PORT..."
+          HEALTHY="false"
+          for attempt in $(seq 1 15); do
+            if curl -fsS "http://127.0.0.1:${APP_PORT}/" -o /dev/null; then
+              HEALTHY="true"
+              break
+            fi
+            sleep 2
+          done
+
+          if [[ "$HEALTHY" != "true" ]]; then
+            echo "ERROR: App did not respond on port $APP_PORT after restart." >&2
+            echo "---- pm2 logs (last 50 lines) ----" >&2
+            sudo -u ssm-user pm2 logs "$PM2_APP_NAME" --lines 50 --nostream >&2 || true
+            exit 1
+          fi
+
+          log "Deploy successful. $PM2_APP_NAME is running and responding on port $APP_PORT."
+          REMOTE_EOF
+          )
+
+          # Dedent heredoc body (YAML block indent becomes leading spaces in the script).
+          REMOTE_SCRIPT="$(printf '%s\n' "$REMOTE_SCRIPT" | sed -e 's/^          //')"
+
+          APP_ENV_B64="$(printf '%s' "${APP_ENV:-}" | base64 -w0)"
+
+          COMMAND_BODY="$(
+            printf "export BUNDLE_S3_URI=%q\n" "$BUNDLE_S3_URI"
+            printf "export APP_DIR=%q\n" "$APP_DIR"
+            printf "export PM2_APP_NAME=%q\n" "$PM2_APP_NAME"
+            printf "export APP_PORT=%q\n" "$APP_PORT"
+            printf "export APP_ENV_B64=%q\n" "$APP_ENV_B64"
+            printf '%s\n' "$REMOTE_SCRIPT"
+          )"
+
+          PARAMS_JSON="$(jq -n --arg cmd "$COMMAND_BODY" '{commands: [$cmd]}')"
+
+          echo "Sending SSM command to instances tagged ${EC2_TAG_KEY}=${EC2_TAG_VALUE}"
+          COMMAND_ID="$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:${EC2_TAG_KEY},Values=${EC2_TAG_VALUE}" \
+            --parameters "$PARAMS_JSON" \
+            --comment "preread ec2 deploy ${GIT_SHA}" \
+            --timeout-seconds 600 \
+            --query 'Command.CommandId' \
+            --output text)"
+          echo "SSM CommandId: $COMMAND_ID"
+
+          # Resolve instance id for wait (wait requires instance-id).
+          INSTANCE_ID=""
+          for attempt in $(seq 1 12); do
+            INSTANCE_ID="$(aws ssm list-command-invocations \
+              --command-id "$COMMAND_ID" \
+              --query 'CommandInvocations[0].InstanceId' \
+              --output text 2>/dev/null || true)"
+            if [[ -n "$INSTANCE_ID" && "$INSTANCE_ID" != "None" ]]; then
+              break
+            fi
+            sleep 5
+          done
+          if [[ -z "$INSTANCE_ID" || "$INSTANCE_ID" == "None" ]]; then
+            echo "::error::No SSM command invocations found for CommandId $COMMAND_ID" >&2
+            exit 1
+          fi
+
+          echo "Waiting for SSM command on $INSTANCE_ID..."
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" || true
+
+          INVOCATIONS="$(aws ssm list-command-invocations --command-id "$COMMAND_ID" --details --output json)"
+          STATUS="$(echo "$INVOCATIONS" | jq -r '.CommandInvocations[0].Status')"
+
+          echo "---- SSM command output (${STATUS}) ----"
+          echo "$INVOCATIONS" | jq -r '.CommandInvocations[0].CommandPlugins[]? | "-- stdout --\n\(.Output)\n-- stderr --\n\(.StandardErrorContent // "")"' || true
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "::error::SSM deploy command finished with status $STATUS" >&2
+            exit 1
+          fi
+
+          echo "SSM deploy command completed successfully."

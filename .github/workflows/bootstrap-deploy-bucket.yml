@@ -38,12 +38,12 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Create bucket if it does not already exist
         env:
           BUCKET: ${{ vars.DEPLOY_ARTIFACTS_BUCKET }}
-          REGION: ${{ vars.AWS_REGION }}
+          REGION: ${{ secrets.AWS_REGION }}
         run: |
           set -euo pipefail
           if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
