@@ -95,7 +95,7 @@
 
   function renderSheetTitle(baseTitle, pageIndex, totalPages) {
     if (totalPages <= 1) return baseTitle;
-    return `${baseTitle} — עמוד ${pageIndex + 1}`;
+    return `${baseTitle} - עמוד ${pageIndex + 1}`;
   }
 
   function buildBackOrder(words) {
@@ -151,13 +151,13 @@
         <div class="duplex-guide-header">
           <p class="duplex-guide-title">הדפסה דו-צדדית - איך זה עובד?</p>
           <p class="duplex-guide-text">
-            כל חזית מופיעה ואחריה הגב שלה. בהדפסה בחרו הדפסה דו-צדדית (היפוך על הצד הארוך) — כך החזית והגב יודפסו על אותו דף.
+            כל חזית מופיעה ואחריה הגב שלה. בהדפסה בחרו הדפסה דו-צדדית (היפוך על הצד הארוך) - כך החזית והגב יודפסו על אותו דף.
           </p>
         </div>
         <ol class="duplex-guide-steps">
           <li class="duplex-guide-step">לחצו <strong>הדפס עכשיו</strong></li>
           <li class="duplex-guide-step">בחלון ההדפסה בחרו <strong>הדפסה דו-צדדית</strong> / היפוך על הצד הארוך</li>
-          <li class="duplex-guide-step">כל חזית תודפס עם הגב שלה מאחוריה — ואז גזרו לאורך הקווים המקווקווים</li>
+          <li class="duplex-guide-step">כל חזית תודפס עם הגב שלה מאחוריה - ואז גזרו לאורך הקווים המקווקווים</li>
         </ol>
         <div class="duplex-guide-demo" aria-hidden="true">
           <div class="duplex-guide-sheet">
@@ -255,7 +255,7 @@
   }
 
   function formatNextReview(value) {
-    if (!value) return '<span class="text-muted">—</span>';
+    if (!value) return '<span class="text-muted">-</span>';
     return `<time datetime="${escapeHtml(String(value))}">${escapeCell(value)}</time>`;
   }
 
@@ -366,7 +366,7 @@
               <td class="words-col-secondary">${
                 w.cefr
                   ? `<span class="cefr-badge cefr-${escapeHtml(w.cefr)}">${escapeCell(w.cefr)}</span>`
-                  : '<span class="text-muted">—</span>'
+                  : '<span class="text-muted">-</span>'
               }</td>
               <td class="words-cell-def words-col-secondary">${escapeCell(w.definition)}</td>
               <td class="words-cell-translation words-col-secondary">${escapeCell(w.translation)}</td>

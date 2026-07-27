@@ -207,7 +207,7 @@
       row.querySelectorAll('.match-option').forEach((opt) => {
         opt.disabled = true;
       });
-      // Definition already used — disable it on remaining rows
+      // Definition already used - disable it on remaining rows
       gameArea.querySelectorAll(`.match-row:not(.solved) .match-option[data-id="${defId}"]`).forEach((opt) => {
         opt.disabled = true;
         opt.classList.remove('selected');

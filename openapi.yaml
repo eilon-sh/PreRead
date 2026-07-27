@@ -34,7 +34,7 @@ info:
     ## Rate Limiting
 
     Responses may include `Retry-After` when rate limited (`429`). Limits apply per route group
-    (general API, auth, uploads, word extraction).
+    (general API, auth, uploads, password reset email).
 
 servers:
   - url: http://localhost:3000
@@ -1005,47 +1005,6 @@ components:
           enum: [processing]
         message:
           type: string
-
-    ExtractWordsRequest:
-      type: object
-      properties:
-        minCefr:
-          $ref: '#/components/schemas/CefrLevel'
-          description: Only extract words at or above this CEFR level
-
-    ExtractedWord:
-      type: object
-      required: [id, word, definition, cefr]
-      properties:
-        id:
-          type: integer
-        word:
-          type: string
-        definition:
-          type: string
-        cefr:
-          $ref: '#/components/schemas/CefrLevel'
-        context:
-          type: [string, 'null']
-        translation:
-          type: [string, 'null']
-
-    ExtractWordsResponse:
-      type: object
-      required: [documentId, extracted, inserted, words]
-      properties:
-        documentId:
-          type: integer
-        extracted:
-          type: integer
-          description: Total words returned by the extraction service
-        inserted:
-          type: integer
-          description: New words actually saved (duplicates skipped)
-        words:
-          type: array
-          items:
-            $ref: '#/components/schemas/ExtractedWord'
 
     WordSummary:
       type: object

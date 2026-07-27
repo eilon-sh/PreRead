@@ -4,12 +4,6 @@ import prisma from '#db/prisma.js';
 import { uploadPdfToS3 } from '#services/s3Service.js';
 import { decodeUploadedFilename } from '#utils/filenameUtils.js';
 
-export function getDocumentProcessingState(processingStatus) {
-  return {
-    status: processingStatus,
-  };
-}
-
 function buildDocumentS3Key(userId, filename) {
   const base = path.basename(filename ?? 'document', '.pdf');
   const normalized = base.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 80) || 'document';
@@ -53,12 +47,11 @@ export async function failStuckProcessingDocuments() {
 }
 
 function mapDocument(d, wordCount) {
-  const processingState = getDocumentProcessingState(d.processingStatus);
   return {
     id: d.id,
     filename: decodeUploadedFilename(d.filename),
     min_cefr: d.minCefr ?? null,
-    processing_status: processingState.status,
+    processing_status: d.processingStatus,
     ...(wordCount !== undefined ? { word_count: wordCount } : {}),
   };
 }

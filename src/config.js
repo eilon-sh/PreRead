@@ -38,7 +38,6 @@ export default {
     max: parseIntOr(process.env.RATE_LIMIT_MAX, 300),
     authMax: parseIntOr(process.env.RATE_LIMIT_AUTH_MAX, 20),
     uploadMax: parseIntOr(process.env.RATE_LIMIT_UPLOAD_MAX, 5),
-    extractMax: parseIntOr(process.env.RATE_LIMIT_EXTRACT_MAX, 60),
     passwordResetEmailMax: parseIntOr(process.env.RATE_LIMIT_PASSWORD_RESET_EMAIL_MAX, 3),
     passwordResetEmailWindowMs: parseIntOr(
       process.env.RATE_LIMIT_PASSWORD_RESET_EMAIL_WINDOW_MS,

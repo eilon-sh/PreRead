@@ -88,7 +88,7 @@ ${buildCefrFilterSection(minCefr)}
 - Assign the **lowest CEFR level** (from A1–C2) that accurately fits the word's difficulty in academic context.
 - When unsure between two adjacent levels, choose the **higher** one.
 - "translation" must be a concise Hebrew equivalent (1–3 words when possible).
-- "definition" must be a short, clear Hebrew definition (one sentence max) in neutral dictionary style — never English.
+- "definition" must be a short, clear Hebrew definition (one sentence max) in neutral dictionary style - never English.
 
 ## Systematic verification (before each row)
 Before including any word, evaluate it against every rule below and only include it if you can justify all of them:
