@@ -42,7 +42,7 @@ jobs:
         PORT=${{ secrets.PORT }}
         BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
         TRUST_PROXY=true
-        BETTER_AUTH_SECRET=${ secrets.BETTER_AUTH_SECRET }}
+        BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
         DATABASE_URL=${{ secrets.DATABASE_URL }}
         CSRF_SECRET=${{ secrets.CSRF_SECRET }}
         S3_UPLOAD_BUCKET=${{ secrets.S3_UPLOAD_BUCKET }}
