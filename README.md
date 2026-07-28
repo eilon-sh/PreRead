@@ -106,4 +106,21 @@ Yes. Every document and word belongs only to your account. You must be logged in
 
 ## For developers
 
-AWS infrastructure, deployment, and development setup: [`docs/aws-infrastructure.md`](docs/aws-infrastructure.md)
+### OpenAPI
+
+API contract: [`openapi.yaml`](openapi.yaml). View it at [openapiviewer.com](https://openapiviewer.com) (upload / open the file).
+
+### AWS — what you need to run
+
+| Service | Role |
+| --- | --- |
+| **RDS** PostgreSQL | App + Lambda database |
+| **S3** upload bucket | PDF storage; events → SQS |
+| **SQS** | Triggers document-processing Lambda |
+| **Lambda** | Extracts words via Bedrock |
+| **Bedrock** | Claude inference profile |
+| **IAM** | Lambda role + EC2 instance profile |
+| **EC2** | Express app (prod); tag `Name=preread-app` |
+| **S3** artifacts bucket | CI deploys (Lambda zip / EC2 tarball) |
+
+Full setup (configure each service, env vars, GitHub Actions, smoke test): [`docs/aws-infrastructure.md`](aws-infrastructure.md)

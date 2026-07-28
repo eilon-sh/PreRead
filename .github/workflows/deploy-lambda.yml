@@ -6,8 +6,7 @@ name: Deploy Lambda
 on:
   push:
     branches: [main]
-    paths:
-      - 'lambda/**'
+    paths: [lambda/**]
   workflow_dispatch:
 
 permissions:
@@ -19,23 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FUNCTION_NAME: preread-process-document
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Validate Lambda configuration
-        run: |
-          set -euo pipefail
-
-          for variable in AWS_REGION BEDROCK_MODEL_ID DATABASE_URL; do
-            if [[ -z "${!variable:-}" ]]; then
-              echo "::error::Required GitHub secret ${variable} is not configured."
-              exit 1
-            fi
-          done
 
       - uses: actions/setup-node@v4
         with:

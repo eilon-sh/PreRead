@@ -218,11 +218,15 @@
       )
       .join('');
 
+    const backQuery = new URLSearchParams();
+    if (documentId) backQuery.set('documentId', documentId);
+    const backHref = `/words?${backQuery.toString()}`;
+
     wordsTable.innerHTML = `
       ${renderDuplexGuideHtml()}
       <div class="print-toolbar no-print d-flex flex-wrap gap-2 mb-3">
         <button class="btn btn-primary btn-sm" id="printBtn" type="button">הדפס עכשיו</button>
-        <a href="/words${window.location.search.replace(/([?&])printCards=1(&?)/, '$1').replace(/[?&]$/, '')}" class="btn btn-secondary btn-sm">חזרה לטבלה</a>
+        <a href="${escapeHtml(backHref)}" class="btn btn-secondary btn-sm">חזרה לטבלה</a>
       </div>
       ${sheetsHtml}
     `;
