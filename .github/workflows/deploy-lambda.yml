@@ -87,14 +87,17 @@ jobs:
           aws lambda update-function-code \
             --function-name "$FUNCTION_NAME" \
             --s3-bucket "$BUCKET" \
-            --s3-key "$KEY"
+            --s3-key "$KEY" \
+            --output text > /dev/null
+
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
           # JSON form — shorthand Variables={a=b} breaks on = ? @ in DATABASE_URL
           ENV_JSON="$(node -e 'console.log(JSON.stringify({Variables:{BEDROCK_MODEL_ID:process.env.BEDROCK_MODEL_ID,DATABASE_URL:process.env.DATABASE_URL}}))')"
           aws lambda update-function-configuration \
             --function-name "$FUNCTION_NAME" \
-            --environment "$ENV_JSON"
+            --environment "$ENV_JSON" \
+            --output text > /dev/null
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
           echo "Lambda $FUNCTION_NAME code and environment updated."
