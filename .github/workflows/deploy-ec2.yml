@@ -92,7 +92,8 @@ jobs:
         run: |
           set -euo pipefail
           aws s3 cp "${{ steps.build.outputs.archive_path }}" \
-            "s3://${BUCKET}/ec2/${{ steps.build.outputs.archive_filename }}"
+            "s3://${BUCKET}/ec2/${{ steps.build.outputs.archive_filename }}" \
+            --only-show-errors
 
       - name: Deploy to EC2 via SSM (no SSH, no git pull)
         env:
@@ -131,7 +132,7 @@ jobs:
           fi
 
           log "Downloading bundle from S3..."
-          aws s3 cp "$BUNDLE_S3_URI" "$TMP_BUNDLE"
+          aws s3 cp "$BUNDLE_S3_URI" "$TMP_BUNDLE" --only-show-errors
 
           log "Removing previous src/, public/, prisma/ (leaving .env and node_modules untouched)..."
           rm -rf "${APP_DIR:?}/src" "${APP_DIR:?}/public" "${APP_DIR:?}/prisma"
