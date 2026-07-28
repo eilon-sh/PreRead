@@ -8,7 +8,7 @@
 
 1. **Sign up** - Create an account on the registration page, or sign in with Google (if enabled).
 2. **Log in** - After logging in, you land on the **Upload** page.
-3. **Forgot your password?** - Use the reset link on the login page to receive an email.
+3. **Forgot your password?** - Use the reset link on the login page to receive an email. *(Local testing only.)*
 
 ---
 
