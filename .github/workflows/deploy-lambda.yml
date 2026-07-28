@@ -6,8 +6,9 @@ name: Deploy Lambda
 on:
   push:
     branches: [main]
-    paths: [lambda/**]
-  workflow_dispatch:
+    paths:
+      - 'lambda/**'
+    workflow_dispatch:
 
 permissions:
   id-token: write
@@ -83,13 +84,12 @@ jobs:
           set -euo pipefail
           KEY="lambda/process-document-${{ github.sha }}.zip"
 
-          aws s3 cp .build/lambda.zip "s3://${BUCKET}/${KEY}"
+          aws s3 cp .build/lambda.zip "s3://${BUCKET}/${KEY}" --only-show-errors
           aws lambda update-function-code \
             --function-name "$FUNCTION_NAME" \
             --s3-bucket "$BUCKET" \
             --s3-key "$KEY" \
             --output text > /dev/null
-
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
           # JSON form — shorthand Variables={a=b} breaks on = ? @ in DATABASE_URL
