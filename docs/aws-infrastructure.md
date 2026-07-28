@@ -60,7 +60,7 @@ flowchart LR
     LAMBDA[Lambda<br/>preread-process-document]
     BEDROCK[Amazon Bedrock]
     SECRET[Secrets Manager<br/>preread/database-url]
-    ARTIFACTS[(S3 Artifacts Bucket<br/>preread-artifacts-...)]
+    ARTIFACTS[(S3 Artifacts Bucket<br/>preread-deploy-artifacts-...)]
     RDS[(RDS PostgreSQL)]
   end
 
@@ -175,7 +175,7 @@ Two buckets:
 | Bucket               | Name (default)                            | Purpose                                                      |
 | -------------------- | ----------------------------------------- | ------------------------------------------------------------ |
 | **Upload Bucket**    | `preread-uploads-{AccountId}-us-east-1`   | Storage for PDFs uploaded by users                           |
-| **Artifacts Bucket** | `preread-artifacts-{AccountId}-us-east-1` | Lambda code zip (not in CFN template - created by deploy script) |
+| **Artifacts Bucket** | `preread-deploy-artifacts-{AccountId}-us-east-1` | Lambda code zip + EC2 bundles (not in CFN template; provision manually) |
 
 ### Upload flow
 
@@ -217,7 +217,7 @@ Key format: `{userId}-{timestamp}-{normalized-filename}.pdf`
 
 #### Artifacts Bucket
 
-1. **Create bucket** named `preread-artifacts-{AccountId}-us-east-1`
+1. **Create bucket** named `preread-deploy-artifacts-{AccountId}-us-east-1`
 2. No event notifications needed
 3. Used only for Lambda `UpdateFunctionCode`
 
@@ -241,7 +241,7 @@ UploadBucket:
 | ---------------------------- | -------------------------------------------------- | ---------------------------------- |
 | Express App (IAM role / local AWS profile) | `s3:PutObject`                                     | `arn:aws:s3:::preread-uploads-*/*` |
 | Lambda `ProcessDocumentRole` | `s3:GetObject`                                     | `arn:aws:s3:::preread-uploads-*/*` |
-| Deploy script                | `s3:CreateBucket`, `s3:PutObject`, `s3:HeadBucket` | artifacts bucket                   |
+| GitHub Actions deploy role   | `s3:PutObject`, `s3:GetObject`, `s3:HeadBucket`     | artifacts bucket                   |
 
 ### Important configuration values
 
@@ -831,19 +831,9 @@ Processing resources (S3 upload, SQS, Lambda, IAM, Event Source) are managed in 
 
 If you have an existing stack named `preread-docs` - you can continue managing it in Console. Creating new resources is documented in sections 3–11 (manual creation).
 
-### Bootstrap for deploy artifacts (one-time)
+### Deploy artifacts bucket
 
-Before CI/CD:
-
-1. Run once (as admin with `iam:PutRolePolicy`):
-
-```bash
-./infra-setup/bootstrap/grant-deploy-bucket-permissions.sh \
-  <github-deploy-role-name> <ec2-instance-role-name> [aws-region]
-```
-
-2. Add GitHub Variable / Secret `DEPLOY_ARTIFACTS_BUCKET` with the created bucket name.
-3. Run workflow **Bootstrap Deploy Bucket** (`workflow_dispatch`) from Actions.
+CI/CD expects GitHub secret `DEPLOY_ARTIFACTS_BUCKET` to point at an existing S3 bucket used to stage Lambda zips and EC2 bundles (e.g. `preread-deploy-artifacts-<account-id>-<region>`). Create and configure that bucket (encryption, public access block, lifecycle) in AWS Console / CLI before first deploy.
 
 ### Infrastructure diagnostics
 
@@ -913,7 +903,7 @@ Do not add `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` to `.env` - they are no
 - [ ] Fill local `.env` (DATABASE_URL, AWS_REGION, S3_UPLOAD_BUCKET) and configure a local AWS CLI profile for S3 uploads
 - [ ] Enable model access in Bedrock Console
 - [ ] Create S3/SQS/Lambda resources (Console / CLI - sections 3–11)
-- [ ] Bootstrap: `grant-deploy-bucket-permissions.sh` + Bootstrap Deploy Bucket workflow
+- [ ] Ensure deploy artifacts S3 bucket exists; set `DEPLOY_ARTIFACTS_BUCKET`
 - [ ] Configure GitHub secrets (see table below)
 - [ ] Copy `S3_UPLOAD_BUCKET` to `.env` and EC2 deploy secrets
 - [ ] `npm run dev` - test PDF upload
@@ -925,7 +915,7 @@ Do not add `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` to `.env` - they are no
 |--------|--------|
 | `AWS_ROLE_ARN` | OIDC role for GitHub Actions |
 | `AWS_REGION` | e.g. `us-east-1` |
-| `DEPLOY_ARTIFACTS_BUCKET` | Artifacts bucket (from bootstrap) |
+| `DEPLOY_ARTIFACTS_BUCKET` | Artifacts bucket name |
 | `DATABASE_URL` | Lambda + EC2 |
 | `BEDROCK_MODEL_ID` | Lambda env |
 | `PORT`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `CSRF_SECRET` | EC2 `.env` |
@@ -951,7 +941,6 @@ Workflow: **Deploy Lambda** (`.github/workflows/deploy-lambda.yml`)
 
 | Workflow | File | Purpose |
 |----------|------|---------|
-| Bootstrap Deploy Bucket | `.github/workflows/bootstrap-deploy-bucket.yml` | Create artifacts bucket (one-time) |
 | Deploy Lambda | `.github/workflows/deploy-lambda.yml` | Build + deploy Lambda code |
 | Deploy EC2 | `.github/workflows/deploy-ec2.yml` | Bundle + SSM deploy for application |
 
@@ -1158,10 +1147,6 @@ aws s3 rb s3://preread-deploy-artifacts-ACCOUNT-us-east-1
 # Deploy Lambda (CI) - push to main on lambda/** or Actions → Deploy Lambda
 # Deploy EC2 (CI) - push to main on src/** / public/** or Actions → Deploy EC2
 
-# Bootstrap artifacts bucket (one-time, admin)
-./infra-setup/bootstrap/grant-deploy-bucket-permissions.sh \
-  <github-deploy-role> <ec2-instance-role> us-east-1
-
 # Sync secret to DB
 aws secretsmanager put-secret-value \
   --secret-id preread/database-url \
@@ -1183,8 +1168,6 @@ npm run dev
 |------|-------------|
 | `.github/workflows/deploy-lambda.yml` | Build + deploy Lambda code |
 | `.github/workflows/deploy-ec2.yml` | Bundle + SSM deploy to EC2 |
-| `.github/workflows/bootstrap-deploy-bucket.yml` | Create artifacts bucket |
-| `infra-setup/bootstrap/grant-deploy-bucket-permissions.sh` | Bootstrap IAM for artifacts bucket |
 | `lambda/process-document/` | Lambda code |
 | `src/services/s3Service.js` | S3 upload from application |
 | `prisma/schema.prisma` | DB schema |
