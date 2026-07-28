@@ -18,7 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FUNCTION_NAME: preread-process-document
-
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
     steps:
       - uses: actions/checkout@v4
 
