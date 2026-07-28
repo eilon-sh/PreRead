@@ -6,8 +6,7 @@ name: Deploy Lambda
 on:
   push:
     branches: [main]
-    paths:
-      - 'lambda/**'
+    paths: [lambda/**]
   workflow_dispatch:
 
 permissions:
@@ -22,20 +21,9 @@ jobs:
       AWS_REGION: ${{ secrets.AWS_REGION }}
       BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
+      
     steps:
       - uses: actions/checkout@v4
-
-      - name: Validate Lambda configuration
-        run: |
-          set -euo pipefail
-
-          for variable in AWS_REGION BEDROCK_MODEL_ID DATABASE_URL; do
-            if [[ -z "${!variable:-}" ]]; then
-              echo "::error::Required GitHub secret ${variable} is not configured."
-              exit 1
-            fi
-          done
 
       - uses: actions/setup-node@v4
         with:
@@ -102,29 +90,11 @@ jobs:
             --s3-key "$KEY"
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
-          # Merge env safely (DATABASE_URL often has ?, @, etc.)
-          CURRENT_ENV="$(aws lambda get-function-configuration \
-            --function-name "$FUNCTION_NAME" \
-            --query 'Environment.Variables' \
-            --output json)"
-
-          jq -cn \
-            --arg functionName "$FUNCTION_NAME" \
-            --arg current "${CURRENT_ENV:-null}" \
-            --arg model "$BEDROCK_MODEL_ID" \
-            --arg databaseUrl "$DATABASE_URL" \
-            '{
-              FunctionName: $functionName,
-              Environment: {
-                Variables: (($current | fromjson) // {}) + {
-                  BEDROCK_MODEL_ID: $model,
-                  DATABASE_URL: $databaseUrl
-                }
-              }
-            }' > /tmp/lambda-config.json
-
+          # JSON form — shorthand Variables={a=b} breaks on = ? @ in DATABASE_URL
+          ENV_JSON="$(node -e 'console.log(JSON.stringify({Variables:{BEDROCK_MODEL_ID:process.env.BEDROCK_MODEL_ID,DATABASE_URL:process.env.DATABASE_URL}}))')"
           aws lambda update-function-configuration \
-            --cli-input-json file:///tmp/lambda-config.json
+            --function-name "$FUNCTION_NAME" \
+            --environment "$ENV_JSON"
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
           echo "Lambda $FUNCTION_NAME code and environment updated."
