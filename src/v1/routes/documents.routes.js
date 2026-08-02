@@ -5,10 +5,11 @@ import * as documentsController from '../controllers/documents.controller.js';
 
 const router = express.Router();
 
+// מגדיר העלאת PDF לזיכרון
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
-  // Browsers send UTF-8 filenames; multer defaults to latin1 and garbles non-ASCII names
+  // שומר שמות קבצים ב-UTF-8
   defParamCharset: 'utf8',
   fileFilter: (_req, file, cb) => {
     if (file.mimetype === 'application/pdf') {

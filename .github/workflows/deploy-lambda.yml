@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'lambda/**'
+      - 'prisma/schema.prisma'
   workflow_dispatch:
 
 permissions:
@@ -92,8 +93,20 @@ jobs:
             --output text > /dev/null
           aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
+          # Merge into existing Variables — update-function-configuration replaces the entire map.
           # JSON form — shorthand Variables={a=b} breaks on = ? @ in DATABASE_URL
-          ENV_JSON="$(node -e 'console.log(JSON.stringify({Variables:{BEDROCK_MODEL_ID:process.env.BEDROCK_MODEL_ID,DATABASE_URL:process.env.DATABASE_URL}}))')"
+          CURRENT_ENV="$(aws lambda get-function-configuration \
+            --function-name "$FUNCTION_NAME" \
+            --query 'Environment.Variables' --output json)"
+          ENV_JSON="$(CURRENT_ENV="$CURRENT_ENV" node -e '
+            const current = JSON.parse(process.env.CURRENT_ENV || "null") || {};
+            const next = {
+              ...current,
+              BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID,
+              DATABASE_URL: process.env.DATABASE_URL,
+            };
+            console.log(JSON.stringify({ Variables: next }));
+          ')"
           aws lambda update-function-configuration \
             --function-name "$FUNCTION_NAME" \
             --environment "$ENV_JSON" \

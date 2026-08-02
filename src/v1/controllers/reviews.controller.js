@@ -2,6 +2,7 @@ import { submitFlashcardReview } from '#services/reviewService.js';
 import { getDueCards, getStats } from '#services/sm2Service.js';
 import { parseBoundedLimit, parseIntOr, parseOptionalPositiveInt } from '#utils/parseIntUtils.js';
 
+// מחזיר כרטיסיות ממתינות לחזרה
 export async function getDue(req, res) {
   const documentId = parseOptionalPositiveInt(req.query.documentId);
   if (documentId === false) {
@@ -21,10 +22,12 @@ export async function getDue(req, res) {
   res.json({ count: cards.length, cards });
 }
 
+// מחזיר סטטיסטיקות חזרה למשתמש
 export async function getStatsHandler(req, res) {
   res.json(await getStats(req.user.id));
 }
 
+// מעדכן כרטיס לפי דירוג איכות
 export async function submitReview(req, res) {
   try {
     const quality = parseIntOr(req.body.quality, null);

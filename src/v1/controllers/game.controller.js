@@ -1,5 +1,6 @@
 import { getAchievements, getUserStats } from '#services/gameService.js';
 
+// מחזיר פרופיל, סטטים והישגים
 export async function getProfile(req, res) {
   const stats = await getUserStats(req.user.id);
   const achievements = await getAchievements(req.user.id);
@@ -16,6 +17,7 @@ export async function getProfile(req, res) {
   });
 }
 
+// מחזיר את כל ההישגים
 export async function getAchievementsHandler(req, res) {
   res.json(await getAchievements(req.user.id));
 }

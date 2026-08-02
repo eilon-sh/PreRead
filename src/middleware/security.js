@@ -13,8 +13,7 @@ export const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   cookieOptions: {
     httpOnly: true,
     sameSite: 'strict',
-    // Only mark cookies Secure when the public URL is HTTPS.
-    // HSTS + Secure cookies on plain HTTP break asset loads and auth.
+    // Secure רק ב־HTTPS ציבורי
     secure: config.isHttps,
     path: '/',
   },
@@ -22,6 +21,7 @@ export const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
 });
 
+// כותרי אבטחה ו־CSP
 export function helmetMiddleware() {
   return helmet({
     contentSecurityPolicy: {
@@ -36,12 +36,12 @@ export function helmetMiddleware() {
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
-        // Never upgrade HTTP→HTTPS unless the site is actually served over TLS.
+        // שדרוג HTTPS רק אם TLS פעיל
         ...(config.isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
       },
     },
     crossOriginEmbedderPolicy: false,
-    // COOP / HSTS require a potentially trustworthy origin (HTTPS or localhost).
+    // COOP/HSTS דורשים מקור מהימן
     crossOriginOpenerPolicy: config.isHttps ? { policy: 'same-origin' } : false,
     originAgentCluster: config.isHttps,
     hsts: config.isHttps
@@ -50,6 +50,7 @@ export function helmetMiddleware() {
   });
 }
 
+// דוחס תשובות מעל 1KB
 export const compressionMiddleware = compression({
   threshold: 1024,
   filter: (req, res) => {
@@ -60,6 +61,7 @@ export const compressionMiddleware = compression({
 
 export const hppMiddleware = hpp();
 
+// מגביל קצב לבקשות API
 export const apiLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
@@ -78,6 +80,7 @@ export const apiLimiter = rateLimit({
   },
 });
 
+// מגביל ניסיונות התחברות
 export const authLimiter = rateLimit({
   windowMs: 15 * secend,
   max: config.rateLimit.authMax,
@@ -92,6 +95,7 @@ export const authLimiter = rateLimit({
   },
 });
 
+// מגביל העלאות קבצים
 export const uploadLimiter = rateLimit({
   windowMs: 60 * secend,
   max: config.rateLimit.uploadMax,
@@ -106,6 +110,7 @@ export const uploadLimiter = rateLimit({
   },
 });
 
+// מגביל בקשות איפוס סיסמה
 export const passwordResetEmailLimiter = rateLimit({
   windowMs: config.rateLimit.passwordResetEmailWindowMs,
   max: config.rateLimit.passwordResetEmailMax,
@@ -120,6 +125,7 @@ export const passwordResetEmailLimiter = rateLimit({
   },
 });
 
+// יוצר אסימון CSRF לדפים
 export function createCsrfToken(req, res) {
   return generateCsrfToken(req, res, {
     overwrite: false,
@@ -127,6 +133,7 @@ export function createCsrfToken(req, res) {
   });
 }
 
+// מצמיד CSRF לתבניות EJS
 export function attachCsrfToken(req, res, next) {
   if (req.path.startsWith('/api')) return next();
   try {
@@ -137,6 +144,7 @@ export function attachCsrfToken(req, res, next) {
   next();
 }
 
+// בודק CSRF בבקשות משנות
 export function csrfProtection(req, res, next) {
   if (req.path.startsWith('/auth')) return next();
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();

@@ -7,6 +7,7 @@
   const dueCount = document.getElementById('dueCount');
   const urlParams = new URLSearchParams(window.location.search);
 
+  // טוען סטטיסטיקות לימוד ומשחק
   async function loadStats() {
     const [reviewRes, profileRes] = await Promise.all([
       apiFetch('/api/v1/reviews/stats'),
@@ -41,6 +42,7 @@
     `;
   }
 
+  // מציג התראת XP והישגים
   function showXpToast(game) {
     const toast = document.getElementById('xpToast');
     let msg = `+${game.xpGained} XP`;
@@ -53,6 +55,7 @@
     setTimeout(() => toast.classList.add('hidden'), 2500);
   }
 
+  // טוען כרטיסים שממתינים לחזרה
   async function loadCards() {
     const query = new URLSearchParams();
     if (urlParams.get('documentId')) query.set('documentId', urlParams.get('documentId'));
@@ -70,6 +73,7 @@
     loadStats();
   }
 
+  // מציג כרטיס נוכחי או סיום
   function renderCard() {
     if (cards.length === 0) {
       flashcardArea.innerHTML = `
@@ -134,6 +138,7 @@
       });
     }
 
+    // שולח דירוג איכות לשרת
     document.querySelectorAll('.rate-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const quality = parseInt(btn.dataset.q, 10);

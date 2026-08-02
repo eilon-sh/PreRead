@@ -17,6 +17,7 @@ export default {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    // פעיל רק כשיש מפתחות
     get enabled() {
       return !!(this.clientId && this.clientSecret);
     },

@@ -1,5 +1,6 @@
 import config from '#config.js';
 
+// מחזיר 404 לפי סוג הנתיב
 export function notFoundHandler(req, res) {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not found' });
@@ -7,6 +8,7 @@ export function notFoundHandler(req, res) {
   res.status(404).send('Not found');
 }
 
+// ממפה שגיאות נפוצות לקוד HTTP
 export function errorHandler(err, req, res, _next) {
   if (err.code === 'EBADCSRFTOKEN') {
     return res.status(403).json({ error: 'Invalid CSRF token' });
@@ -23,6 +25,7 @@ export function errorHandler(err, req, res, _next) {
   console.error(`[${req.method} ${req.originalUrl}]`, err);
 
   const status = err.status || err.statusCode || 500;
+  // מסתיר פרטי שגיאה בפרודקשן
   const message =
     status < 500 || !config.isProduction
       ? err.message || 'Internal server error'

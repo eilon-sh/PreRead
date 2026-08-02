@@ -21,6 +21,7 @@
   const xpToast = document.getElementById('xpToast');
   const emptyState = document.getElementById('emptyState');
 
+  // מערבב מערך בסדר אקראי
   function shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -30,10 +31,12 @@
     return a;
   }
 
+  // מעדכן תצוגת ניקוד נוכחי
   function updateScore() {
     scoreBar.textContent = `ניקוד: ${score.correct} / ${score.total}`;
   }
 
+  // מציג התראת XP והישגים
   function showXpToast(result) {
     if (!result?.xpGained) return;
     let msg = `+${result.xpGained} XP`;
@@ -46,6 +49,7 @@
     setTimeout(() => xpToast.classList.add('hidden'), 2800);
   }
 
+  // טוען מילים למשחק מהשרת
   async function loadWords() {
     const query = new URLSearchParams();
     if (documentId) query.set('documentId', documentId);
@@ -58,6 +62,7 @@
     return words.length > 0;
   }
 
+  // מדווח סיום משחק ומקבל XP
   async function completeSession(gameType) {
     if (score.total === 0) return;
     const res = await apiFetch('/api/v1/minigames/complete', {
@@ -72,6 +77,7 @@
     if (res.ok) showXpToast(await res.json());
   }
 
+  // מציג בחירת סוגי משחק
   function renderPicker() {
     gamePicker.innerHTML = Object.entries(GAME_META)
       .map(
@@ -92,6 +98,7 @@
     });
   }
 
+  // מתחיל משחק לפי סוג שנבחר
   async function startGame(type) {
     const hasWords = await loadWords();
     if (!hasWords) {
@@ -118,6 +125,7 @@
     else if (type === 'quiz') renderQuiz();
   }
 
+  // חוזר למסך בחירת משחק
   function backToPicker() {
     gameArea.classList.add('hidden');
     gameTitle.classList.add('hidden');
@@ -126,6 +134,7 @@
     currentGame = null;
   }
 
+  // מרנדר לוח משחק התאמה
   function renderMatch() {
     const count = Math.min(words.length, 6);
     matchPairs = shuffle(words).slice(0, count);
@@ -168,12 +177,14 @@
     });
   }
 
+  // מנקה בחירה בשורת התאמה
   function clearRowSelection(row) {
     row.querySelectorAll('.match-option').forEach((opt) => {
       opt.classList.remove('selected');
     });
   }
 
+  // מטפל בלחיצה על אפשרות התאמה
   function handleMatchOptionClick(btn) {
     if (matchLocked || btn.disabled) return;
 
@@ -184,11 +195,11 @@
     const wordId = row.dataset.wordId;
     const defId = btn.dataset.id;
 
-    // Radio within row: only one selected option
+    // בחירה יחידה בתוך השורה
     clearRowSelection(row);
     btn.classList.add('selected');
 
-    // Exclusive definition across open rows
+    // מבטל בחירה כפולה של אותה הגדרה
     gameArea.querySelectorAll('.match-row:not(.solved)').forEach((otherRow) => {
       if (otherRow === row) return;
       otherRow.querySelectorAll(`.match-option.selected[data-id="${defId}"]`).forEach((opt) => {
@@ -207,7 +218,7 @@
       row.querySelectorAll('.match-option').forEach((opt) => {
         opt.disabled = true;
       });
-      // Definition already used - disable it on remaining rows
+      // משבית הגדרה שכבר הותאמה
       gameArea.querySelectorAll(`.match-row:not(.solved) .match-option[data-id="${defId}"]`).forEach((opt) => {
         opt.disabled = true;
         opt.classList.remove('selected');
@@ -233,6 +244,7 @@
     }
   }
 
+  // מרנדר שאלת חידון בחירה מרובה
   function renderQuiz() {
     const total = Math.min(words.length, 10);
     if (quizIndex >= total) return finishGame('quiz');
@@ -297,6 +309,7 @@
     };
   }
 
+  // מציג מסך סיום משחק
   async function finishGame(type) {
     await completeSession(type);
     gameArea.innerHTML = `

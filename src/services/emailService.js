@@ -1,8 +1,10 @@
+// שליחת אימיילים דרך Resend
 import { Resend } from 'resend';
 import config from '#config.js';
 
 let resendClient;
 
+// מחזיר לקוח Resend יחיד
 function getResendClient() {
   if (!resendClient) {
     resendClient = new Resend(config.resend.apiKey);
@@ -10,6 +12,7 @@ function getResendClient() {
   return resendClient;
 }
 
+// שולח קישור לאיפוס סיסמה
 export async function sendPasswordResetEmail(to, url) {
   const subject = 'Reset your password';
   const html = `

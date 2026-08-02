@@ -3,6 +3,7 @@ import { parseBoundedLimit, parseOptionalPositiveInt } from '#utils/parseIntUtil
 
 const GAME_TYPES = new Set(['match', 'quiz']);
 
+// מחזיר מילים למשחק לפי סינון
 export async function getWords(req, res) {
   const { cefr } = req.query;
 
@@ -25,6 +26,7 @@ export async function getWords(req, res) {
   res.json({ words, total: words.length });
 }
 
+// מעניק XP בסיום מיני-משחק
 export async function complete(req, res) {
   const { correct, total, gameType } = req.body;
 

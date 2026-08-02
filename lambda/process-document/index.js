@@ -1,5 +1,6 @@
 import { processS3Record } from './processor.js';
 
+// מטפל בערכי SQS ומחזיר כשלונות
 export const handler = async (event) => {
   const records = event.Records || [];
   const failures = [];

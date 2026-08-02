@@ -1,3 +1,5 @@
+// קובע ערכת נושא מוקדמת
+
 (() => {
   const saved = localStorage.getItem('preread-theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

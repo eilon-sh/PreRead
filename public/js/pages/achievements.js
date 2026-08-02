@@ -1,4 +1,5 @@
 (() => {
+  // טוען ומציג את כל ההישגים
   async function loadAchievements() {
     const res = await apiFetch('/api/v1/game/achievements');
     if (isRateLimited(res)) {

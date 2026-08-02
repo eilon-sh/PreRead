@@ -1,4 +1,7 @@
+// פרופיל משתמש וסטטיסטיקות משחק
+
 (() => {
+  // טוען ומציג נתוני פרופיל
   async function loadProfile() {
     const res = await apiFetch('/api/v1/game/profile');
     if (isRateLimited(res)) {

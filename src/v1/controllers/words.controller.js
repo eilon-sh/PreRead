@@ -1,6 +1,7 @@
 import { listWords } from '#services/wordService.js';
 import { parseOptionalPositiveInt } from '#utils/parseIntUtils.js';
 
+// מחזיר מילים עם סינון מסמך
 export async function list(req, res) {
   const documentId = parseOptionalPositiveInt(req.query.documentId);
   if (documentId === false) {

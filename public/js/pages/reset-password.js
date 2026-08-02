@@ -4,6 +4,7 @@
   const error = params.get('error');
   const form = document.getElementById('resetForm');
 
+  // בודק תוקף טוקן מהקישור
   if (error === 'INVALID_TOKEN' || !token) {
     showStatusAlert(
       error
@@ -16,6 +17,7 @@
 
   form.classList.remove('hidden');
 
+  // שולח סיסמה חדשה לשרת
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const password = document.getElementById('password').value;

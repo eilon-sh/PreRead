@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// הגדרות הישגים ראשוניים
 const ACHIEVEMENTS = [
   {
     code: 'first_upload',
@@ -140,6 +141,7 @@ const ACHIEVEMENTS = [
   },
 ];
 
+// זורע הישגים אם הטבלה ריקה
 export async function seedAchievements() {
   const count = await prisma.achievement.count();
   if (count > 0) return;

@@ -1,3 +1,4 @@
+// שולח בקשת קישור איפוס
 document.getElementById('forgotForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = e.target.querySelector('button[type="submit"]');

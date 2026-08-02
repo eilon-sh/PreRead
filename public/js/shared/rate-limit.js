@@ -1,3 +1,6 @@
+// טיפול בהגבלת קצב בקשות
+
+// ממיר שניות להודעת המתנה
 function formatRetryAfter(seconds) {
   const n = parseInt(seconds, 10);
   if (!n || Number.isNaN(n)) return null;
@@ -6,20 +9,24 @@ function formatRetryAfter(seconds) {
   return `נסה שוב בעוד ${minutes} דקות`;
 }
 
+// מציג באנר הגבלת קצב
 function showRateLimitBanner(message, retryAfter) {
   const retryText = formatRetryAfter(retryAfter);
   const text = retryText ? `${message} ${retryText}.` : message;
   showRateLimitAlert(text);
 }
 
+// בודק אם התגובה 429
 function isRateLimited(res) {
   return res.status === 429;
 }
 
+// מחזיר HTML למצב חסום
 function rateLimitPlaceholder() {
   return '<p class="muted rate-limit-placeholder">לא ניתן לטעון נתונים כרגע - יותר מדי בקשות. נסה שוב בעוד כמה רגעים.</p>';
 }
 
+// מחלץ הודעה מתגובת 429
 async function parseRateLimitResponse(res) {
   if (res.status !== 429) return null;
   try {
