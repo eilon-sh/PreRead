@@ -1,3 +1,4 @@
+// בדיקת הגדרות חובה בפרודקשן
 const DEV_AUTH_SECRET = 'dev-secret-key-for-local-testing-only-32chars';
 
 export function validateProductionConfig(config) {
@@ -24,8 +25,6 @@ export function validateProductionConfig(config) {
   if (!config.awsRegion) {
     errors.push('AWS_REGION is required in production');
   }
-
-  // AWS SDK uses the default credential chain (env keys, ECS, EC2 instance profile via IMDS).
 
   if (errors.length > 0) {
     throw new Error(`Production configuration errors:\n- ${errors.join('\n- ')}`);

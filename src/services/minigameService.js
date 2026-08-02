@@ -3,6 +3,7 @@ import { today } from '#utils/dateUtils.js';
 import { computeStreakUpdate } from '#utils/streakUtils.js';
 import { checkAchievements, ensureUserStats, getUserStats, levelFromXp } from './gameService.js';
 
+// מערבב מערך באקראי
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -12,6 +13,7 @@ function shuffle(arr) {
   return a;
 }
 
+// שולף מילים אקראיות למשחקון
 export async function getGameWords(userId, { cefr, documentId, limit = 20 } = {}) {
   const take = Math.min(Math.max(limit * 5, limit), 200);
   const words = await prisma.word.findMany({
@@ -35,6 +37,7 @@ export async function getGameWords(userId, { cefr, documentId, limit = 20 } = {}
   return shuffle(words).slice(0, Math.min(limit, words.length));
 }
 
+// מעניק XP לפי תוצאת משחקון
 export async function awardMinigameXp(userId, { correct, total, gameType }) {
   if (total <= 0) {
     return { xpGained: 0, leveledUp: false, newAchievements: [] };

@@ -12,10 +12,12 @@
   const POLL_BACKOFF_FACTOR = 1.5;
   let pollDelayMs = POLL_INITIAL_MS;
 
+  // בודק אם יש מסמכים בעיבוד
   function hasProcessingDocs(docs = cachedDocuments) {
     return docs.some((d) => d.processing_status === 'processing');
   }
 
+  // מבטל טיימר סקירת מסמכים
   function clearDocumentsPolling() {
     if (documentsPollTimer) {
       clearTimeout(documentsPollTimer);
@@ -23,6 +25,7 @@
     }
   }
 
+  // מוצא מסמך בעיבוד למעקב
   function getFocusedProcessingDocId(docs = cachedDocuments) {
     if (focusedProcessingDocId) {
       const focusedDoc = docs.find((doc) => doc.id === focusedProcessingDocId);
@@ -35,6 +38,7 @@
     return docs.find((doc) => doc.processing_status === 'processing')?.id ?? null;
   }
 
+  // ממזג עדכון מסמך לרשימה
   function mergeDocumentUpdate(updatedDoc) {
     const index = cachedDocuments.findIndex((doc) => doc.id === updatedDoc.id);
     if (index === -1) {
@@ -45,6 +49,7 @@
     cachedDocuments[index] = { ...cachedDocuments[index], ...updatedDoc };
   }
 
+  // מתזמן סקירה עם האטה הדרגתית
   function scheduleDocumentsPoll() {
     clearDocumentsPolling();
     if (document.hidden || !hasProcessingDocs()) return;
@@ -56,7 +61,7 @@
       try {
         await loadFocusedDocument();
       } catch {
-        // keep polling on transient failures
+        // ממשיך סקרים בכשלים זמניים
       }
 
       if (!hasProcessingDocs()) {
@@ -69,6 +74,7 @@
     }, pollDelayMs);
   }
 
+  // מפעיל או עוצר סקירה לפי מצב
   function refreshDocumentsPolling(docs = []) {
     if (hasProcessingDocs(docs)) {
       if (!documentsPollTimer) {
@@ -81,6 +87,7 @@
     pollDelayMs = POLL_INITIAL_MS;
   }
 
+  // עוצר סקירה כשהטאב מוסתר
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       clearDocumentsPolling();
@@ -95,6 +102,7 @@
 
   window.addEventListener('pagehide', clearDocumentsPolling);
 
+  // מציג שם קובץ שנבחר
   pdfInput.addEventListener('change', () => {
     const file = pdfInput.files[0];
     if (!file) {
@@ -106,6 +114,7 @@
     fileNameEl.title = file.name;
   });
 
+  // מחזיר תווית סטטוס בעברית
   function getDocumentStatusLabel(status) {
     if (status === 'ready') return 'מוכן';
     if (status === 'failed') return 'נכשל';
@@ -113,6 +122,7 @@
     return 'בתהליך';
   }
 
+  // בוחר מחלקת תג לפי סטטוס
   function getStatusBadgeClass(status) {
     if (status === 'ready') return 'badge text-bg-secondary';
     if (status === 'failed') return 'badge badge-error';
@@ -120,6 +130,7 @@
     return 'badge badge-info';
   }
 
+  // מפרמט תווית רמת CEFR מינימלית
   function formatMinCefrLabel(minCefr) {
     if (!minCefr) return '';
     const level = String(minCefr).toUpperCase();
@@ -132,12 +143,14 @@
     return labels[level] || level;
   }
 
+  // מרנדר תג רמת CEFR
   function renderMinCefrBadge(minCefr) {
     const label = formatMinCefrLabel(minCefr);
     if (!label) return '';
     return `<span class="badge text-bg-secondary">${escapeHtml(label)}</span>`;
   }
 
+  // מרנדר כרטיסי מסמכים ברשימה
   function renderDocuments(docs = []) {
     const mergedDocs = [...Array.from(localUploadingDocs.values()), ...docs];
 
@@ -221,6 +234,7 @@
       .join('');
   }
 
+  // מוחק מסמך שנכשל אחרי אישור
   documentsList.addEventListener('click', async (event) => {
     const deleteBtn = event.target.closest('.js-delete-doc');
     if (!deleteBtn) return;
@@ -255,6 +269,7 @@
     }
   });
 
+  // טוען את רשימת המסמכים
   async function loadDocuments() {
     const res = await apiFetch('/api/v1/documents');
     if (isRateLimited(res)) {
@@ -267,6 +282,7 @@
     refreshDocumentsPolling(docs);
   }
 
+  // מרענן מסמך בעיבוד בלבד
   async function loadFocusedDocument() {
     const focusedDocId = getFocusedProcessingDocId();
     if (!focusedDocId) {
@@ -286,6 +302,7 @@
     refreshDocumentsPolling(cachedDocuments);
   }
 
+  // מעלה PDF ומוסיף לרשימה
   uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('uploadBtn');

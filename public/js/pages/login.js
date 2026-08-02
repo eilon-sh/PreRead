@@ -1,3 +1,6 @@
+// התחברות באימייל וב-Google
+
+// שולח טופס התחברות לשרת
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const res = await fetch('/api/auth/sign-in/email', {

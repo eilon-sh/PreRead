@@ -1,7 +1,9 @@
+// קורא טוקן CSRF מהמטא
 function getCsrfToken() {
   return document.querySelector('meta[name="csrf-token"]')?.content || '';
 }
 
+// מרענן טוקן CSRF מהשרת
 async function fetchCsrfToken() {
   const res = await fetch('/api/v1/csrf-token', { credentials: 'include' });
   if (!res.ok) return '';
@@ -11,6 +13,7 @@ async function fetchCsrfToken() {
   return data.csrfToken || '';
 }
 
+// מבצע fetch עם CSRF והגבלת קצב
 async function apiFetch(url, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
   const headers = { ...(options.headers || {}) };

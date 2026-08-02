@@ -1,3 +1,4 @@
+// מתחיל התחברות דרך Google
 async function signInWithGoogle(callbackURL = '/upload') {
   const res = await fetch('/api/auth/sign-in/social', {
     method: 'POST',
@@ -23,6 +24,7 @@ async function signInWithGoogle(callbackURL = '/upload') {
   window.location.href = callbackURL;
 }
 
+// מחבר כפתור להתחברות Google
 function bindGoogleSignIn(buttonId, callbackURL = '/upload') {
   const btn = document.getElementById(buttonId);
   if (!btn) return;

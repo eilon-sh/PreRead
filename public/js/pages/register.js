@@ -1,3 +1,6 @@
+// הרשמת משתמש חדש
+
+// שולח טופס הרשמה לשרת
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const res = await fetch('/api/auth/sign-up/email', {

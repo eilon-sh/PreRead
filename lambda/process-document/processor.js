@@ -11,6 +11,7 @@ const CEFR_ORDER = ['B1', 'B2', 'C1', 'C2'];
 const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 const CSV_COLUMNS = 'word,definition,cefr,context,translation';
 
+// מנרמל מילה להשוואה
 const wordKey = (text) =>
   String(text || '')
     .trim()
@@ -30,6 +31,7 @@ const BEDROCK_SYSTEM_PROMPT =
   'Sort rows alphabetically by word and include each word once only. ' +
   'Never wrap output in markdown code fences. Never add text outside the CSV block.';
 
+// בונה סעיף סינון רמת CEFR
 function buildCefrFilterSection(minCefr) {
   const level = CEFR_ORDER.includes((minCefr || '').toUpperCase())
     ? minCefr.toUpperCase()
@@ -51,6 +53,7 @@ Do NOT include words below ${level} (including A1/A2 when they fall under the mi
 - **C2 (Proficiency)**: Rare, highly specialized, or literary words - known mainly by near-native speakers.`;
 }
 
+// בונה פרומפט לחילוץ אוצר מילים
 function buildPrompt(minCefr) {
   const level = CEFR_ORDER.includes((minCefr || '').toUpperCase())
     ? minCefr.toUpperCase()
@@ -121,17 +124,20 @@ hypothesis,"הסבר מוצע שנבדק במחקר",B2,"This hypothesis was tes
 methodology,"שיטת המחקר והניתוח",C1,"The methodology was rigorous",מתודולוגיה`;
 }
 
+// מסיר ` markdown מתשובה
 function stripMarkdownFences(text) {
   const fenced = text.match(/```(?:csv)?\s*([\s\S]*?)```/i);
   return (fenced ? fenced[1] : text).trim();
 }
 
+// שולף בלוק CSV מהטקסט
 function extractCsvPayload(text) {
   const cleaned = stripMarkdownFences(text);
   const match = cleaned.match(/word,definition,cefr,context,translation[\s\S]*/i);
   return (match ? match[0] : cleaned).trim();
 }
 
+// מפרסר שורת CSV עם מרכאות
 function parseCsvFields(line) {
   const fields = [];
   let current = '';
@@ -167,6 +173,7 @@ function parseCsvFields(line) {
   return fields;
 }
 
+// מתקן עמודות כשיש פסיקים עודפים
 function normalizeCsvWordFields(fields, columnCount) {
   if (fields.length === columnCount) return fields;
   if (fields.length < columnCount) return null;
@@ -175,10 +182,12 @@ function normalizeCsvWordFields(fields, columnCount) {
   return [fields[0], fields[1], fields[2], fields.slice(3, -1).join(','), fields.at(-1)];
 }
 
+// בודק אם השורה נראית תקינה
 function isLikelyWordRow(fields) {
   return CEFR_ORDER.includes(String(fields[2] || '').toUpperCase());
 }
 
+// ממיר CSV לרשימת מילים
 function parseCsvWordsPayload(csvPayload) {
   const lines = csvPayload.split('\n').map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
@@ -203,6 +212,7 @@ function parseCsvWordsPayload(csvPayload) {
   return words;
 }
 
+// ממפה שדות מילה לפורמט אחיד
 function mapWordsArray(words) {
   return words.map((w) => ({
     word: w.word,
@@ -213,6 +223,7 @@ function mapWordsArray(words) {
   }));
 }
 
+// מפרסר תשובת Bedrock למילים
 function parseBedrockResponse(response) {
   const textBlocks = (response.content || [])
     .filter((block) => block.type === 'text' && block.text)
@@ -230,6 +241,8 @@ function parseBedrockResponse(response) {
 
   throw new Error('Invalid CSV response: missing header row');
 }
+
+// מסנן מילים מתחת לרמת מינימום
 function filterByMinCefr(words, minCefr) {
   if (!minCefr) return words;
   const minIndex = CEFR_ORDER.indexOf(minCefr.toUpperCase());
@@ -240,6 +253,7 @@ function filterByMinCefr(words, minCefr) {
   });
 }
 
+// מנקה ומיישר שדות מילים שחולצו
 function normalizeExtractedWords(words) {
   const arr = [];
 
@@ -256,6 +270,7 @@ function normalizeExtractedWords(words) {
   return arr;
 }
 
+// מחזיר לקוח Prisma עם סוד DB
 async function getPrisma() {
   if (prismaClient) return prismaClient;
   if (!process.env.DATABASE_URL && process.env.DATABASE_URL_SECRET_ARN) {
@@ -270,6 +285,7 @@ async function getPrisma() {
   return prismaClient;
 }
 
+// שולף bucket ומפתח מאירוע SQS
 function parseS3FromRecord(record) {
   const body = JSON.parse(record.body || '{}');
   const s3Record = body.Records?.[0];
@@ -283,6 +299,7 @@ function parseS3FromRecord(record) {
   };
 }
 
+// ממיר סטרים לבאפר בינארי
 async function streamToBuffer(stream) {
   const chunks = [];
   for await (const chunk of stream) {
@@ -291,6 +308,7 @@ async function streamToBuffer(stream) {
   return Buffer.concat(chunks);
 }
 
+// שולח PDF ל-Bedrock ומחלץ מילים
 async function extractWordsFromPdf(pdfBuffer, minCefr) {
   const client = new AnthropicBedrock({
     awsRegion: process.env.AWS_REGION || 'us-east-1',
@@ -324,6 +342,8 @@ async function extractWordsFromPdf(pdfBuffer, minCefr) {
   const rawWords = parseBedrockResponse(response);
   return normalizeExtractedWords(filterByMinCefr(rawWords, minCefr));
 }
+
+// שומר מילים חדשות וכרטיסיות
 async function saveExtractedWords(documentId, words) {
   const prisma = await getPrisma();
   const existingRows = await prisma.word.findMany({
@@ -358,11 +378,13 @@ async function saveExtractedWords(documentId, words) {
   });
 }
 
+// מקצר הודעת שגיאה לשמירה
 function formatProcessingError(err) {
   const raw = err?.message || String(err || 'Unknown processing error');
   return raw.replace(/\s+/g, ' ').trim().slice(0, 1000);
 }
 
+// מסמן מסמך כנכשל בעיבוד
 async function markDocumentFailed(documentId, err) {
   const prisma = await getPrisma();
   await prisma.document.update({
@@ -374,6 +396,7 @@ async function markDocumentFailed(documentId, err) {
   });
 }
 
+// מעבד רשומת S3 עד סטטוס מוכן
 export async function processS3Record(record) {
   const { bucket, key } = parseS3FromRecord(record);
   const prisma = await getPrisma();
@@ -403,7 +426,13 @@ export async function processS3Record(record) {
     });
   } catch (err) {
     console.error(`[document:${document.id}] lambda processing failed`, err);
-    await markDocumentFailed(document.id, err);
+    // Keep status `processing` so SQS retries can find the row. Mark failed only
+    // after redrive threshold (align with queue maxReceiveCount / DLQ).
+    const receiveCount = Number(record.attributes?.ApproximateReceiveCount || '1');
+    const maxReceiveCount = Number(process.env.SQS_MAX_RECEIVE_COUNT || '5');
+    if (receiveCount >= maxReceiveCount) {
+      await markDocumentFailed(document.id, err);
+    }
     throw err;
   }
 }

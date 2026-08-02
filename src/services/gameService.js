@@ -4,15 +4,18 @@ import { computeStreakUpdate } from '#utils/streakUtils.js';
 
 const XP_BY_QUALITY = { 0: 2, 1: 3, 2: 5, 3: 10, 4: 15, 5: 25 };
 
+// XP הנדרש לרמה נתונה
 export function xpForLevel(level) {
   return (level - 1) * (level - 1) * 50;
 }
 
+// מחשב רמה לפי סך XP
 export function levelFromXp(xp) {
   if (xp <= 0) return 1;
   return Math.floor(Math.sqrt(xp / 50)) + 1;
 }
 
+// ממפה סטטיסטיקות לפורמט API
 function toStatsResponse(stats) {
   const currentLevelXp = xpForLevel(stats.level);
   const nextLevelXp = xpForLevel(stats.level + 1);
@@ -38,6 +41,7 @@ function toStatsResponse(stats) {
   };
 }
 
+// יוצר סטטיסטיקות משתמש אם חסרות
 export async function ensureUserStats(userId, tx = prisma) {
   return tx.userStats.upsert({
     where: { userId },
@@ -46,11 +50,13 @@ export async function ensureUserStats(userId, tx = prisma) {
   });
 }
 
+// מחזיר סטטיסטיקות משחק למשתמש
 export async function getUserStats(userId) {
   const stats = await ensureUserStats(userId);
   return toStatsResponse(stats);
 }
 
+// פותח הישג ומעניק XP
 async function unlockAchievement(userId, achievementId, tx = prisma) {
   const existing = await tx.userAchievement.findUnique({
     where: { userId_achievementId: { userId, achievementId } },
@@ -73,6 +79,7 @@ async function unlockAchievement(userId, achievementId, tx = prisma) {
   return achievement;
 }
 
+// בודק ופותח הישגים חדשים
 export async function checkAchievements(userId, stats, tx = prisma) {
   const unlocked = [];
   const all = await tx.achievement.findMany();
@@ -118,6 +125,7 @@ export async function checkAchievements(userId, stats, tx = prisma) {
   return unlocked;
 }
 
+// מעדכן XP ורצף אחרי חזרה
 export async function processReview(userId, quality, card, tx = prisma) {
   const todayStr = today();
   const xpGained = XP_BY_QUALITY[quality] ?? 5;
@@ -167,6 +175,7 @@ export async function processReview(userId, quality, card, tx = prisma) {
   };
 }
 
+// מחזיר רשימת הישגים עם מצב פתיחה
 export async function getAchievements(userId) {
   await ensureUserStats(userId);
 

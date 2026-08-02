@@ -1,5 +1,8 @@
+// הצגת התראות למשתמש
+
 const ALERT_TIMER_MS = 5000;
 
+// מציג אזהרת הגבלת קצב
 function showRateLimitAlert(text) {
   Swal.fire({
     icon: 'warning',
@@ -13,6 +16,7 @@ function showRateLimitAlert(text) {
   });
 }
 
+// טוסט סטטוס קצר בתחתית
 function showStatusAlert(message, type = 'info') {
   const icon = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
 
@@ -27,6 +31,7 @@ function showStatusAlert(message, type = 'info') {
   });
 }
 
+// דיאלוג אישור או ביטול
 async function showConfirmAlert({
   title,
   text,

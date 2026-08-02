@@ -19,6 +19,7 @@
     document.querySelector('.words-page-header')?.classList.add('d-none');
   }
 
+  // מעדכן קישור למצב הדפסה
   function updatePrintLink() {
     if (!printCardsLink) return;
     const query = new URLSearchParams();
@@ -27,10 +28,12 @@
     printCardsLink.href = `/words?${query.toString()}`;
   }
 
+  // בורח תוכן תא בטבלה
   function escapeCell(text) {
     return escapeHtml(text || '-');
   }
 
+  // בונה טקסט גב לכרטיסייה
   function toCardBackText(word) {
     const parts = [
       word.definition ? `הגדרה: ${word.definition}` : '',
@@ -42,6 +45,7 @@
 
   const PRINT_CARDS_PER_PAGE = 8;
 
+  // מחלק מילים לדפי הדפסה
   function chunkWords(words, size) {
     const chunks = [];
     for (let i = 0; i < words.length; i += size) {
@@ -50,6 +54,7 @@
     return chunks;
   }
 
+  // מרנדר חזית כרטיסייה להדפסה
   function renderFrontCard(word) {
     return `
       <article class="print-card">
@@ -60,6 +65,7 @@
     `;
   }
 
+  // מרנדר גב כרטיסייה להדפסה
   function renderBackCard(word) {
     return `
       <article class="print-card print-card-back">
@@ -70,6 +76,7 @@
     `;
   }
 
+  // מרנדר דף הדפסה עם כרטיסים
   function renderPrintSheet(title, cardsHtml, { isBack = false, pageBreakAfter = false } = {}) {
     const classes = ['print-sheet'];
     if (isBack) classes.push('print-back-page');
@@ -82,6 +89,7 @@
     `;
   }
 
+  // שומר העדפת הסתרת כותרות
   function bindPrintOptions() {
     const noHeadersCheck = document.getElementById('printNoHeaders');
     if (!noHeadersCheck) return;
@@ -93,11 +101,13 @@
     });
   }
 
+  // מוסיף מספר עמוד לכותרת
   function renderSheetTitle(baseTitle, pageIndex, totalPages) {
     if (totalPages <= 1) return baseTitle;
     return `${baseTitle} - עמוד ${pageIndex + 1}`;
   }
 
+  // מסדר גב להדפסה דו-צדדית
   function buildBackOrder(words) {
     const ordered = [];
     for (let i = 0; i < words.length; i += 2) {
@@ -109,6 +119,7 @@
     return ordered;
   }
 
+  // מתאים גודל טקסט לכרטיס
   function fitTextElement(textEl, container, { minPx = 7, maxPx = 14 } = {}) {
     textEl.style.fontSize = `${maxPx}px`;
     textEl.style.lineHeight = '1.35';
@@ -131,6 +142,7 @@
     textEl.style.fontSize = `${low}px`;
   }
 
+  // מתאים טקסט בכל כרטיסי ההדפסה
   function fitPrintCardText(root = document) {
     root.querySelectorAll('[data-fit-text]').forEach((textEl) => {
       const container = textEl.closest('.print-card-content');
@@ -145,6 +157,7 @@
 
   let printFitBound = false;
 
+  // מציג הנחיית הדפסה דו-צדדית
   function renderDuplexGuideHtml() {
     return `
       <aside class="duplex-guide no-print" aria-label="הנחיית הדפסה דו-צדדית">
@@ -189,6 +202,7 @@
     `;
   }
 
+  // בונה פריסת הדפסה דו-צדדית
   function renderPrintLayout(words) {
     const frontPages = chunkWords(words, PRINT_CARDS_PER_PAGE);
     const sheetConfigs = [];
@@ -242,6 +256,7 @@
     }
   }
 
+  // מציג מצב ריק כשאין מילים
   function renderEmptyState(messageHtml) {
     return `
       <div class="words-empty">
@@ -258,22 +273,26 @@
     `;
   }
 
+  // מפרמט תאריך חזרה הבאה
   function formatNextReview(value) {
     if (!value) return '<span class="text-muted">-</span>';
     return `<time datetime="${escapeHtml(String(value))}">${escapeCell(value)}</time>`;
   }
 
+  // מעדכן סיכום מספר מילים
   function setSummary(count) {
     if (!wordsSummary) return;
     wordsSummary.hidden = false;
     wordsSummary.textContent = count === 1 ? 'מילה אחת' : `${count} מילים`;
   }
 
+  // מציג או מסתיר כפתור מחיקה
   function setDeleteButtonVisible(visible) {
     if (!deleteDocBtn) return;
     deleteDocBtn.hidden = !visible;
   }
 
+  // מביא שם מסמך לתצוגה
   async function getDocumentName() {
     if (!documentId) return 'המסמך';
     try {
@@ -286,6 +305,7 @@
     }
   }
 
+  // מוחק מסמך אחרי אישור משתמש
   async function handleDeleteDocument() {
     if (!documentId || !deleteDocBtn) return;
 
@@ -317,6 +337,7 @@
     deleteDocBtn.addEventListener('click', handleDeleteDocument);
   }
 
+  // טוען מילים ומרנדר טבלה או הדפסה
   async function loadWords() {
     const query = new URLSearchParams();
     if (documentId) query.set('documentId', documentId);

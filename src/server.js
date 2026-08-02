@@ -27,6 +27,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 validateProductionConfig(config);
 
+// מאתחל נתונים ומסמכים תקועים
 await seedAchievements();
 await failStuckProcessingDocuments();
 
@@ -42,7 +43,7 @@ app.use(compressionMiddleware);
 app.use(cookieParser());
 app.use(hppMiddleware);
 
-// Better Auth must be mounted before express.json()
+// Better Auth חייב להופיע לפני JSON
 app.post('/api/auth/request-password-reset', passwordResetEmailLimiter, toNodeHandler(auth));
 app.all('/api/auth/{*splat}', authLimiter, toNodeHandler(auth));
 
@@ -60,6 +61,7 @@ app.use(
 app.use(loadSession);
 app.use(attachCsrfToken);
 
+// דפי אורח — מפנים מחוברים
 app.get('/', (req, res) => {
   if (req.user) return res.redirect('/upload');
   res.render('home');
@@ -83,6 +85,7 @@ app.get('/reset-password', (req, res) => {
 
 app.use(requireAuth);
 
+// דפים פרטיים אחרי אימות
 app.get('/upload', (_req, res) => res.render('upload'));
 app.get('/words', (req, res) => {
   if (!req.query.documentId) return res.redirect('/upload');
@@ -113,6 +116,7 @@ const server = app.listen(config.port, (error) => {
   console.log(`Environment: ${config.isProduction ? 'production' : 'development'}`);
 });
 
+// סוגר DB ושרת בנקיון
 async function shutdown() {
   await prisma.$disconnect();
   server.close(() => process.exit(0));

@@ -2,6 +2,7 @@ import prisma from '#db/prisma.js';
 import { calculateSm2 } from '#services/sm2Service.js';
 import { processReview } from './gameService.js';
 
+// מעדכן כרטיס ומעניק XP
 export async function submitFlashcardReview(userId, flashcardId, quality) {
   return prisma.$transaction(async (tx) => {
     const card = await tx.flashcard.findFirst({

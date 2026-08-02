@@ -1,5 +1,6 @@
 import prisma from '#db/prisma.js';
 
+// ממפה מילה לפורמט API
 export function mapWord(w) {
   return {
     id: w.id,
@@ -17,6 +18,7 @@ export function mapWord(w) {
   };
 }
 
+// מחזיר רשימת מילים למשתמש
 export async function listWords(userId, { documentId } = {}) {
   const words = await prisma.word.findMany({
     where: {

@@ -1,4 +1,7 @@
+// מחליף בין מצב בהיר לכהה
+
 (() => {
+  // מחיל ערכת נושא ושומר
   function applyTheme(theme) {
     const html = document.documentElement;
     html.setAttribute('data-theme', theme);
@@ -8,6 +11,7 @@
     if (meta) meta.content = theme === 'dark' ? '#141820' : '#4f46e5';
   }
 
+  // מחבר כפתור החלפת נושא
   function initThemeToggle(btn) {
     if (!btn || btn.dataset.themeBound === 'true') return;
     btn.dataset.themeBound = 'true';

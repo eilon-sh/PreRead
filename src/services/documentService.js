@@ -4,17 +4,20 @@ import prisma from '#db/prisma.js';
 import { uploadPdfToS3 } from '#services/s3Service.js';
 import { decodeUploadedFilename } from '#utils/filenameUtils.js';
 
+// בונה מפתח S3 ייחודי
 function buildDocumentS3Key(userId, filename) {
   const base = path.basename(filename ?? 'document', '.pdf');
   const normalized = base.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 80) || 'document';
   return `${userId}-${Date.now()}-${normalized}.pdf`;
 }
 
+// מקצר הודעת שגיאת עיבוד
 function formatProcessingError(err) {
   const message = err?.message ?? String(err);
   return message.replace(/\s+/g, ' ').trim().slice(0, 1000);
 }
 
+// מסמן מסמך כנכשל בעיבוד
 export async function markDocumentFailed(documentId, err) {
   const processingError = typeof err === 'string' ? err.slice(0, 1000) : formatProcessingError(err);
 
@@ -27,6 +30,7 @@ export async function markDocumentFailed(documentId, err) {
   });
 }
 
+// מסמן מסמכים תקועים כנכשלים
 export async function failStuckProcessingDocuments() {
   const result = await prisma.document.updateMany({
     where: { processingStatus: 'processing' },
@@ -46,6 +50,7 @@ export async function failStuckProcessingDocuments() {
   return result.count;
 }
 
+// ממפה מסמך לפורמט תגובה
 function mapDocument(d, wordCount) {
   return {
     id: d.id,
@@ -56,6 +61,7 @@ function mapDocument(d, wordCount) {
   };
 }
 
+// מחזיר רשימת מסמכי המשתמש
 export async function listDocuments(userId) {
   const documents = await prisma.document.findMany({
     where: { userId },
@@ -66,6 +72,7 @@ export async function listDocuments(userId) {
   return documents.map((d) => mapDocument(d, d._count.words));
 }
 
+// מחזיר מסמך בודד לפי מזהה
 export async function getDocument(userId, id) {
   const doc = await prisma.document.findFirst({
     where: { id, userId },
@@ -75,6 +82,7 @@ export async function getDocument(userId, id) {
   return mapDocument(doc, doc._count.words);
 }
 
+// יוצר רשומת מסמך במסד
 export async function createDocumentRecord(userId, uploadData) {
   const doc = await prisma.document.create({
     data: {
@@ -95,6 +103,7 @@ export async function createDocumentRecord(userId, uploadData) {
   };
 }
 
+// מעלה PDF ומפעיל עיבוד
 export async function uploadDocument(userId, { buffer, originalname, minCefr }) {
   const detectedType = await fileTypeFromBuffer(buffer);
   if (detectedType?.mime !== 'application/pdf') {
@@ -122,6 +131,7 @@ export async function uploadDocument(userId, { buffer, originalname, minCefr }) 
   };
 }
 
+// מוחק מסמך אם אינו בעיבוד
 export async function deleteDocument(userId, id) {
   const doc = await prisma.document.findFirst({
     where: { id, userId },

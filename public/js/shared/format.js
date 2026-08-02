@@ -1,3 +1,4 @@
+// בורח תווים מסוכנים ב-HTML
 function escapeHtml(text) {
   return String(text)
     .replace(/&/g, '&amp;')
@@ -6,6 +7,7 @@ function escapeHtml(text) {
     .replace(/"/g, '&quot;');
 }
 
+// מקצר שם קובץ ושומר סיומת
 function truncateFilename(name, maxLength = 36) {
   const filename = String(name || '');
   if (filename.length <= maxLength) return filename;
