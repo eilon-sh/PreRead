@@ -1,5 +1,6 @@
 node_modules/
 .cursor/
+.agents/
+test/*.pdf
 .env
 skills-lock.json
-test/*.pdf

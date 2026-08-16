@@ -19,7 +19,6 @@ import {
   hppMiddleware,
   passwordResetEmailLimiter,
 } from '#middleware/security.js';
-import { failStuckProcessingDocuments } from '#services/documentService.js';
 import v1Router from '#v1/routes/index.js';
 import { validateProductionConfig } from '#validateConfig.js';
 
@@ -27,9 +26,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 validateProductionConfig(config);
 
-// מאתחל נתונים ומסמכים תקועים
+// מאתחל נתונים
 await seedAchievements();
-await failStuckProcessingDocuments();
 
 const app = express();
 
@@ -43,7 +41,7 @@ app.use(compressionMiddleware);
 app.use(cookieParser());
 app.use(hppMiddleware);
 
-// Better Auth חייב להופיע לפני JSON
+// Better Auth חייב להופיע לפני express.json כי הוא ממש את זה בעצמו
 app.post('/api/auth/request-password-reset', passwordResetEmailLimiter, toNodeHandler(auth));
 app.all('/api/auth/{*splat}', authLimiter, toNodeHandler(auth));
 
@@ -53,7 +51,7 @@ app.locals.googleEnabled = config.google.enabled;
 app.locals.isProduction = config.isProduction;
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
-    maxAge: config.isProduction ? '1d' : 0,
+    maxAge: config.isProduction ? '30d' : 0,
     etag: true,
   }),
 );

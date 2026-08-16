@@ -219,10 +219,12 @@
         opt.disabled = true;
       });
       // משבית הגדרה שכבר הותאמה
-      gameArea.querySelectorAll(`.match-row:not(.solved) .match-option[data-id="${defId}"]`).forEach((opt) => {
-        opt.disabled = true;
-        opt.classList.remove('selected');
-      });
+      gameArea
+        .querySelectorAll(`.match-row:not(.solved) .match-option[data-id="${defId}"]`)
+        .forEach((opt) => {
+          opt.disabled = true;
+          opt.classList.remove('selected');
+        });
       updateScore();
       feedback.classList.add('hidden');
 

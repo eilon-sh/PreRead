@@ -8,6 +8,10 @@ const s3 = new S3Client({ region: config.awsRegion });
 // מעלה ונמחק אוטומטית אחרי 14 יום עם
 // https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html
 export async function uploadPdfToS3({ key, buffer }) {
+  if (!config.s3UploadBucket) {
+    throw new Error('S3_UPLOAD_BUCKET is not configured');
+  }
+
   await s3.send(
     new PutObjectCommand({
       Bucket: config.s3UploadBucket,

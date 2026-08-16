@@ -33,9 +33,7 @@ const BEDROCK_SYSTEM_PROMPT =
 
 // בונה סעיף סינון רמת CEFR
 function buildCefrFilterSection(minCefr) {
-  const level = CEFR_ORDER.includes((minCefr || '').toUpperCase())
-    ? minCefr.toUpperCase()
-    : 'B1';
+  const level = CEFR_ORDER.includes((minCefr || '').toUpperCase()) ? minCefr.toUpperCase() : 'B1';
   const minIndex = CEFR_ORDER.indexOf(level);
   const allowedLevels = CEFR_ORDER.slice(minIndex);
 
@@ -55,9 +53,7 @@ Do NOT include words below ${level} (including A1/A2 when they fall under the mi
 
 // בונה פרומפט לחילוץ אוצר מילים
 function buildPrompt(minCefr) {
-  const level = CEFR_ORDER.includes((minCefr || '').toUpperCase())
-    ? minCefr.toUpperCase()
-    : 'B1';
+  const level = CEFR_ORDER.includes((minCefr || '').toUpperCase()) ? minCefr.toUpperCase() : 'B1';
 
   return `You are an expert English vocabulary teacher specializing in **academic English** for Hebrew-speaking university students.
 
@@ -189,7 +185,10 @@ function isLikelyWordRow(fields) {
 
 // ממיר CSV לרשימת מילים
 function parseCsvWordsPayload(csvPayload) {
-  const lines = csvPayload.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = csvPayload
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   if (lines.length === 0) {
     throw new Error('Invalid CSV response: missing header row');
   }

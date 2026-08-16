@@ -8,7 +8,7 @@
 
 1. **Sign up** - Create an account on the registration page, or sign in with Google (if enabled).
 2. **Log in** - After logging in, you land on the **Upload** page.
-3. **Forgot your password?** - Use the reset link on the login page to receive an email. *(Local testing only.)*
+3. **Forgot your password?** - Use the reset link on the login page to receive an email. _(Local testing only.)_
 
 ---
 
@@ -46,12 +46,12 @@ When the document is **Ready**, you can:
 
 ## Main pages
 
-| Page | What you do there |
-| --- | --- |
-| **Upload** | Upload PDFs, view existing documents and processing status |
-| **Study** | SM-2 flashcards - the system schedules when each word comes back |
-| **Profile** | Level, XP, daily streak, and overall progress |
-| **Achievements** | Milestones and rewards for consistent learning |
+| Page             | What you do there                                                |
+| ---------------- | ---------------------------------------------------------------- |
+| **Upload**       | Upload PDFs, view existing documents and processing status       |
+| **Study**        | SM-2 flashcards - the system schedules when each word comes back |
+| **Profile**      | Level, XP, daily streak, and overall progress                    |
+| **Achievements** | Milestones and rewards for consistent learning                   |
 
 From each ready document you can also open:
 
@@ -112,15 +112,15 @@ API contract: [`openapi.yaml`](openapi.yaml). View it at [openapiviewer.com](htt
 
 ### AWS — what you need to run
 
-| Service | Role |
-| --- | --- |
-| **RDS** PostgreSQL | App + Lambda database |
-| **S3** upload bucket | PDF storage; events → SQS |
-| **SQS** | Triggers document-processing Lambda |
-| **Lambda** | Extracts words via Bedrock |
-| **Bedrock** | Claude inference profile |
-| **IAM** | Lambda role + EC2 instance profile |
-| **EC2** | Express app (prod); tag `Name=preread-app` |
-| **S3** artifacts bucket | CI deploys (Lambda zip / EC2 tarball) |
+| Service                 | Role                                       |
+| ----------------------- | ------------------------------------------ |
+| **RDS** PostgreSQL      | App + Lambda database                      |
+| **S3** upload bucket    | PDF storage; events → SQS                  |
+| **SQS**                 | Triggers document-processing Lambda        |
+| **Lambda**              | Extracts words via Bedrock                 |
+| **Bedrock**             | Claude inference profile                   |
+| **IAM**                 | Lambda role + EC2 instance profile         |
+| **EC2**                 | Express app (prod); tag `Name=preread-app` |
+| **S3** artifacts bucket | CI deploys (Lambda zip / EC2 tarball)      |
 
-Full setup (configure each service, env vars, GitHub Actions, smoke test): [`docs/aws-infrastructure.md`](aws-infrastructure.md)
+Full setup (configure each service, env vars, GitHub Actions, smoke test): [`aws-infrastructure.md`](aws-infrastructure.md)

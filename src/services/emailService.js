@@ -1,4 +1,5 @@
-// שליחת אימיילים דרך Resend
+// שליחת אימייל דרך Resend היא לבדיקה מקומית בלבד — לוודא שהזרימה עובדת.
+// בחשבון החינמי, Resend שולח רק לכתובת שנרשמה בחשבון.
 import { Resend } from 'resend';
 import config from '#config.js';
 

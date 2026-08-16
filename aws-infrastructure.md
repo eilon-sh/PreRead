@@ -104,6 +104,7 @@ Set the access policy **before** the S3 event notification.
 6. **Properties** → **Event notifications** → **Create event notification**
    - Event types: **PUT** (`s3:ObjectCreated:Put`)
    - Destination: SQS → `preread-upload-queue`
+7. Optional: **Management** → **Lifecycle** → expire objects after **14** days
 
 ### Artifacts bucket
 
@@ -136,11 +137,7 @@ Set `S3_UPLOAD_BUCKET=preread-uploads-ACCOUNT_ID-us-east-1` in `.env`.
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "sqs:ReceiveMessage",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes"
-      ],
+      "Action": ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"],
       "Resource": "arn:aws:sqs:us-east-1:ACCOUNT_ID:preread-upload-queue"
     },
     {
@@ -303,7 +300,9 @@ Reverse proxy: Browser `:80` → Express/PM2 on `127.0.0.1:3000`.
 ```nginx
 server {
   listen 80 default_server;
+  # If you add SSL later: listen 443 ssl; then http2 on; (nginx 1.25.1+; older: listen 443 ssl http2;)
   server_name _;
+  server_tokens off;
   client_max_body_size 25m;
 
   location / {
@@ -335,20 +334,20 @@ Local `.env`: `S3_UPLOAD_BUCKET`, `DATABASE_URL`, `AWS_REGION=us-east-1`.
 
 **GitHub secrets:**
 
-| Secret | Used by |
-|--------|---------|
-| `AWS_ROLE_ARN` | Deploy workflows (OIDC) |
-| `AWS_REGION` | Both |
-| `DEPLOY_ARTIFACTS_BUCKET` | Both (`preread-deploy-artifacts-ACCOUNT_ID-us-east-1`) |
-| `DATABASE_URL` | Lambda + EC2 |
-| `BEDROCK_MODEL_ID` | Lambda |
-| `S3_UPLOAD_BUCKET` | EC2 |
-| `PORT` | EC2 (e.g. `3000`) |
-| `BETTER_AUTH_URL` | EC2 — `http://<PUBLIC_IP>` (no domain in this guide) |
-| `BETTER_AUTH_SECRET` | EC2 |
-| `CSRF_SECRET` | EC2 |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | EC2 (optional) |
-| `RESEND_API_KEY` | EC2 (optional) |
+| Secret                                      | Used by                                                |
+| ------------------------------------------- | ------------------------------------------------------ |
+| `AWS_ROLE_ARN`                              | Deploy workflows (OIDC)                                |
+| `AWS_REGION`                                | Both                                                   |
+| `DEPLOY_ARTIFACTS_BUCKET`                   | Both (`preread-deploy-artifacts-ACCOUNT_ID-us-east-1`) |
+| `DATABASE_URL`                              | Lambda + EC2                                           |
+| `BEDROCK_MODEL_ID`                          | Lambda                                                 |
+| `S3_UPLOAD_BUCKET`                          | EC2                                                    |
+| `PORT`                                      | EC2 (e.g. `3000`)                                      |
+| `BETTER_AUTH_URL`                           | EC2 — `http://<PUBLIC_IP>` (no domain in this guide)   |
+| `BETTER_AUTH_SECRET`                        | EC2                                                    |
+| `CSRF_SECRET`                               | EC2                                                    |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | EC2 (optional)                                         |
+| `RESEND_API_KEY`                            | EC2 (optional)                                         |
 
 Workflows: `.github/workflows/deploy-lambda.yml`, `.github/workflows/deploy-ec2.yml`.
 

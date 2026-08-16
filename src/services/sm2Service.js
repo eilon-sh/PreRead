@@ -15,7 +15,6 @@
  * ## Intentionally not implemented
  *
  * - **SM-2 rule 7**: same-day re-review of items scored below 4 until they reach 4+.
- *   Most modern flashcard apps omit this; cards simply reappear on their next scheduled date.
  *
  * @module sm2Service
  */
