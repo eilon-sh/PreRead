@@ -30,26 +30,6 @@ export async function markDocumentFailed(documentId, err) {
   });
 }
 
-// מסמן מסמכים תקועים כנכשלים
-export async function failStuckProcessingDocuments() {
-  const result = await prisma.document.updateMany({
-    where: { processingStatus: 'processing' },
-    data: {
-      processingStatus: 'failed',
-      processingError:
-        'Processing interrupted (server restarted while document was still processing).',
-    },
-  });
-
-  if (result.count > 0) {
-    console.warn(
-      `[startup] Marked ${result.count} stuck document(s) as failed after server restart`,
-    );
-  }
-
-  return result.count;
-}
-
 // ממפה מסמך לפורמט תגובה
 function mapDocument(d, wordCount) {
   return {

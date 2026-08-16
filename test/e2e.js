@@ -133,10 +133,14 @@ async function run() {
   const upload = await multipartUpload(pdfPath);
   if (upload.status !== 202) {
     const uploadErrorText =
-      typeof upload.body === 'string' ? upload.body : upload.body?.error || JSON.stringify(upload.body);
+      typeof upload.body === 'string'
+        ? upload.body
+        : upload.body?.error || JSON.stringify(upload.body);
     if (isMissingCloudUploadPrereq(uploadErrorText)) {
       console.log('SKIPPED: e2e upload flow requires AWS credentials and S3 bucket configuration.');
-      console.log('Set AWS credentials + S3_UPLOAD_BUCKET to run full e2e upload/processing tests.');
+      console.log(
+        'Set AWS credentials + S3_UPLOAD_BUCKET to run full e2e upload/processing tests.',
+      );
       return;
     }
     throw new Error(`Upload failed: ${JSON.stringify(upload.body)}`);

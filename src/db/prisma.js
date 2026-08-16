@@ -141,7 +141,7 @@ const ACHIEVEMENTS = [
   },
 ];
 
-// זורע הישגים אם הטבלה ריקה
+// מכניס הישגים אם הטבלה ריקה
 export async function seedAchievements() {
   const count = await prisma.achievement.count();
   if (count > 0) return;

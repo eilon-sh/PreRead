@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import hpp from 'hpp';
 import config from '#config.js';
 
-const secend = 60 * 1000;
+const ONE_MINUTE = 60 * 1000;
 
 export const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => config.csrfSecret,
@@ -27,26 +27,17 @@ export function helmetMiddleware() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'"],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        objectSrc: ["'none'"],
-        frameAncestors: ["'none'"],
-        baseUri: ["'self'"],
         formAction: ["'self'"],
-        // שדרוג HTTPS רק אם TLS פעיל
+        // משדרג בקשות HTTP ל HTTPS
+        // בשרת הפיתוח זה מבוטל בשביל לאפשר בדיקה לוקלית
         ...(config.isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
       },
     },
-    crossOriginEmbedderPolicy: false,
-    // COOP/HSTS דורשים מקור מהימן
+    // חוסם window.opener מאתרים חיצוניים
     crossOriginOpenerPolicy: config.isHttps ? { policy: 'same-origin' } : false,
-    originAgentCluster: config.isHttps,
-    hsts: config.isHttps
-      ? { maxAge: 15552000, includeSubDomains: true }
-      : false,
+    hsts: config.isHttps ? { maxAge: 15552000, includeSubDomains: true } : false,
   });
 }
 
@@ -82,7 +73,7 @@ export const apiLimiter = rateLimit({
 
 // מגביל ניסיונות התחברות
 export const authLimiter = rateLimit({
-  windowMs: 15 * secend,
+  windowMs: 15 * ONE_MINUTE,
   max: config.rateLimit.authMax,
   standardHeaders: true,
   legacyHeaders: false,
@@ -97,7 +88,7 @@ export const authLimiter = rateLimit({
 
 // מגביל העלאות קבצים
 export const uploadLimiter = rateLimit({
-  windowMs: 60 * secend,
+  windowMs: 60 * ONE_MINUTE,
   max: config.rateLimit.uploadMax,
   standardHeaders: true,
   legacyHeaders: false,
