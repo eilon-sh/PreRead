@@ -29,6 +29,7 @@
 .landing-hero h1 {
   font-size: clamp(2rem, 4.8vw, 3.1rem);
   line-height: 1.15;
+  text-wrap: balance;
 }
 
 .landing-hero-lead {
@@ -57,12 +58,33 @@
   position: relative;
   z-index: 1;
   width: min(340px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
   transform: rotate(2deg);
   transition: transform 0.25s ease;
 }
 
 .landing-demo-card:hover {
   transform: rotate(0deg);
+}
+
+.landing-demo-def {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+[data-theme='dark'] .card.landing-demo-card {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px var(--border-strong);
+}
+
+[data-theme='dark'] .landing-demo-def {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
 }
 
 .landing-demo-word {
@@ -128,12 +150,15 @@
     transform: none;
   }
 
-  .landing-header .theme-toggle {
-    width: 44px;
-    height: 44px;
-  }
-
   .landing-hero-lead {
     overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-demo-card,
+  .landing-demo-card:hover {
+    transform: none;
+    transition: none;
   }
 }

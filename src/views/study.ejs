@@ -17,26 +17,23 @@
   <body>
     <%- include('partials/nav') %>
     <main class="container app-container">
-      <h1 class="h3">לימוד עם SM-2</h1>
-      <p class="subtitle text-muted">פלאשקארדים עם חזרה מרווחת - דרג את הידע שלך</p>
+      <div class="study-title-row">
+        <div class="study-title-text">
+          <h1 class="h3">לימוד עם SM-2</h1>
+          <p class="subtitle text-muted">פלאשקארדים עם חזרה מרווחת - דרג את הידע שלך</p>
+        </div>
+        <section class="study-stats" id="statsBar" aria-live="polite" aria-label="סטטיסטיקות לימוד">
+          <div class="study-stats-row" id="dueCount">
+            <span class="study-stat-chip study-stat-loading">טוען...</span>
+          </div>
+        </section>
+      </div>
 
       <div id="xpToast" class="xp-toast hidden"></div>
 
       <section class="card mb-4 flashcard-container text-center" id="flashcardArea">
         <div class="card-body" style="min-height: 300px">
           <p class="text-muted mb-0">טוען כרטיסים...</p>
-        </div>
-      </section>
-
-      <section class="study-stats mb-4" id="statsBar">
-        <div class="study-stats-row">
-          <div class="study-stats-group" id="dueCount">
-            <span class="study-stat-chip study-stat-loading">טוען...</span>
-          </div>
-          <div class="study-stats-group" id="gameStats"></div>
-          <button class="btn btn-secondary btn-sm study-stats-reload" id="reloadBtn" type="button">
-            רענן
-          </button>
         </div>
       </section>
     </main>
