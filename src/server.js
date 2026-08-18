@@ -49,6 +49,29 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.locals.googleEnabled = config.google.enabled;
 app.locals.isProduction = config.isProduction;
+app.locals.siteUrl = config.betterAuthUrl.replace(/\/$/, '');
+
+const siteUrl = app.locals.siteUrl;
+const noIndexRobots = 'noindex,nofollow';
+
+function pageSeo({ title, description, path: seoPath, robots, image }) {
+  return {
+    seoTitle: title,
+    seoDescription: description,
+    seoPath,
+    ...(robots ? { seoRobots: robots } : {}),
+    ...(image ? { seoImage: image } : {}),
+  };
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
 app.use(
   express.static(path.join(__dirname, '..', 'public'), {
     maxAge: config.isProduction ? '30d' : 0,
@@ -56,46 +79,188 @@ app.use(
   }),
 );
 
+// קבצי סריקה ציבוריים — לפני אימות כדי שמנועי חיפוש יגיעו אליהם
+app.get('/robots.txt', (_req, res) => {
+  res
+    .type('text/plain; charset=UTF-8')
+    .send(
+      [
+        'User-agent: *',
+        'Allow: /',
+        'Allow: /login',
+        'Allow: /register',
+        'Disallow: /upload',
+        'Disallow: /words',
+        'Disallow: /study',
+        'Disallow: /games',
+        'Disallow: /profile',
+        'Disallow: /achievements',
+        'Disallow: /forgot-password',
+        'Disallow: /reset-password',
+        'Disallow: /api/',
+        '',
+        `Sitemap: ${siteUrl}/sitemap.xml`,
+        '',
+      ].join('\n'),
+    );
+});
+
+app.get('/sitemap.xml', (_req, res) => {
+  const urls = [
+    { loc: '/', priority: '1.0' },
+    { loc: '/login', priority: '0.7' },
+    { loc: '/register', priority: '0.8' },
+  ];
+  const body = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    ...urls.flatMap(({ loc, priority }) => [
+      '  <url>',
+      `    <loc>${escapeXml(`${siteUrl}${loc}`)}</loc>`,
+      '    <changefreq>weekly</changefreq>',
+      `    <priority>${priority}</priority>`,
+      '  </url>',
+    ]),
+    '</urlset>',
+    '',
+  ].join('\n');
+  res.type('application/xml; charset=UTF-8').send(body);
+});
+
 app.use(loadSession);
 app.use(attachCsrfToken);
 
 // דפי אורח — מפנים מחוברים
 app.get('/', (req, res) => {
   if (req.user) return res.redirect('/upload');
-  res.render('home');
+  res.render(
+    'home',
+    pageSeo({
+      title: 'Preread - למדו אנגלית אקדמית מהקורסים שלכם',
+      description:
+        'Preread - כלי לסטודנטים: הפכו מאמרים וחומרי קורס לכרטיסיות לימוד עם חילוץ מילים אקדמיות לפי CEFR.',
+      path: '/',
+    }),
+  );
 });
 app.get('/login', (req, res) => {
   if (req.user) return res.redirect('/upload');
-  res.render('login');
+  res.render(
+    'login',
+    pageSeo({
+      title: 'התחברות - Preread',
+      description: 'התחברו ל-Preread כדי להפוך מאמרי PDF לכרטיסיות לימוד באנגלית אקדמית.',
+      path: '/login',
+    }),
+  );
 });
 app.get('/register', (req, res) => {
   if (req.user) return res.redirect('/upload');
-  res.render('register');
+  res.render(
+    'register',
+    pageSeo({
+      title: 'הרשמה - Preread',
+      description: 'הירשמו בחינם ל-Preread וחלצו מילים אקדמיות מחומרי הקורס לפי רמת CEFR.',
+      path: '/register',
+    }),
+  );
 });
 app.get('/forgot-password', (req, res) => {
   if (req.user) return res.redirect('/upload');
-  res.render('forgot-password');
+  res.render(
+    'forgot-password',
+    pageSeo({
+      title: 'שכחתי סיסמה - Preread',
+      description: 'איפוס סיסמה לחשבון Preread.',
+      path: '/forgot-password',
+      robots: noIndexRobots,
+    }),
+  );
 });
 app.get('/reset-password', (req, res) => {
   if (req.user) return res.redirect('/upload');
-  res.render('reset-password');
+  res.render(
+    'reset-password',
+    pageSeo({
+      title: 'איפוס סיסמה - Preread',
+      description: 'בחירת סיסמה חדשה לחשבון Preread.',
+      path: '/reset-password',
+      robots: noIndexRobots,
+    }),
+  );
 });
 
 app.use(requireAuth);
 
 // דפים פרטיים אחרי אימות
-app.get('/upload', (_req, res) => res.render('upload'));
+app.get('/upload', (_req, res) =>
+  res.render(
+    'upload',
+    pageSeo({
+      title: 'העלאה - Preread',
+      description: 'העלאת מסמכים ל-Preread.',
+      path: '/upload',
+      robots: noIndexRobots,
+    }),
+  ),
+);
 app.get('/words', (req, res) => {
   if (!req.query.documentId) return res.redirect('/upload');
-  res.render('words');
+  res.render(
+    'words',
+    pageSeo({
+      title: 'מילים - Preread',
+      description: 'רשימת מילים ללימוד ב-Preread.',
+      path: '/words',
+      robots: noIndexRobots,
+    }),
+  );
 });
-app.get('/study', (_req, res) => res.render('study'));
+app.get('/study', (_req, res) =>
+  res.render(
+    'study',
+    pageSeo({
+      title: 'לימוד - Preread',
+      description: 'לימוד מרווח ב-Preread.',
+      path: '/study',
+      robots: noIndexRobots,
+    }),
+  ),
+);
 app.get('/games', (req, res) => {
   if (!req.query.documentId) return res.redirect('/upload');
-  res.render('games');
+  res.render(
+    'games',
+    pageSeo({
+      title: 'משחקים - Preread',
+      description: 'משחקי מילים ב-Preread.',
+      path: '/games',
+      robots: noIndexRobots,
+    }),
+  );
 });
-app.get('/profile', (_req, res) => res.render('profile'));
-app.get('/achievements', (_req, res) => res.render('achievements'));
+app.get('/profile', (_req, res) =>
+  res.render(
+    'profile',
+    pageSeo({
+      title: 'פרופיל - Preread',
+      description: 'פרופיל המשתמש ב-Preread.',
+      path: '/profile',
+      robots: noIndexRobots,
+    }),
+  ),
+);
+app.get('/achievements', (_req, res) =>
+  res.render(
+    'achievements',
+    pageSeo({
+      title: 'הישגים - Preread',
+      description: 'הישגים ב-Preread.',
+      path: '/achievements',
+      robots: noIndexRobots,
+    }),
+  ),
+);
 
 app.use(express.json({ limit: config.bodyLimit }));
 app.use(express.urlencoded({ extended: false, limit: config.bodyLimit }));
