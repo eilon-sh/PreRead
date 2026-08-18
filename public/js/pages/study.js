@@ -7,7 +7,7 @@
   const dueCount = document.getElementById('dueCount');
   const urlParams = new URLSearchParams(window.location.search);
 
-  // טוען סטטיסטיקות לימוד ומשחק
+  // טוען סטטיסטיקות לימוד (ממתינים, סה״כ)
   async function loadStats() {
     const [reviewRes, profileRes] = await Promise.all([
       apiFetch('/api/v1/reviews/stats'),
@@ -24,20 +24,6 @@
       <span class="study-stat-chip">
         <span class="study-stat-value">${stats.total}</span>
         <span class="study-stat-label">סה״כ</span>
-      </span>
-    `;
-    document.getElementById('gameStats').innerHTML = `
-      <span class="study-stat-chip">
-        <span class="study-stat-value">${profile.stats.level}</span>
-        <span class="study-stat-label">רמה</span>
-      </span>
-      <span class="study-stat-chip study-stat-chip--xp">
-        <span class="study-stat-value">${profile.stats.xp}</span>
-        <span class="study-stat-label">XP</span>
-      </span>
-      <span class="study-stat-chip">
-        <span class="study-stat-value">${profile.stats.current_streak}</span>
-        <span class="study-stat-label">רצף</span>
       </span>
     `;
   }
@@ -187,6 +173,5 @@
     });
   }
 
-  document.getElementById('reloadBtn').addEventListener('click', loadCards);
   loadCards();
 })();
