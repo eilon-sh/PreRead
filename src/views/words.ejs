@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="/css/print.css" />
     <%- include('partials/csrf-meta') %>
     <%- include('partials/alerts-head') %>
-    <script src="/js/shared/format.js"></script>
-    <script src="/js/shared/api.js"></script>
+    <script defer src="/js/shared/format.js"></script>
+    <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
     <%- include('partials/nav') %>
@@ -87,7 +87,7 @@
         </div>
       </section>
     </main>
-    <script src="/js/pages/words.js"></script>
+    <script defer src="/js/pages/words.js"></script>
     <%- include('partials/scripts') %>
   </body>
 </html>

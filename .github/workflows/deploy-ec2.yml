@@ -34,7 +34,7 @@ jobs:
       EC2_TAG_VALUE: preread-app
       APP_DIR: /opt/preread/app
       PM2_APP_NAME: preread
-      APP_PORT: "${{ secrets.PORT }}"
+      APP_PORT: '${{ secrets.PORT }}'
       # Written wholesale to /opt/preread/app/.env on deploy. Add KEY=value lines.
       APP_ENV: |
         NODE_ENV=production

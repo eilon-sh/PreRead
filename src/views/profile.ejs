@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="/css/pages/profile.css" />
     <%- include('partials/csrf-meta') %>
     <%- include('partials/alerts-head') %>
-    <script src="/js/shared/format.js"></script>
-    <script src="/js/shared/api.js"></script>
+    <script defer src="/js/shared/format.js"></script>
+    <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
     <%- include('partials/nav') %>
@@ -24,7 +24,7 @@
         <p class="text-muted mb-0">טוען...</p>
       </div>
     </main>
-    <script src="/js/pages/profile.js"></script>
+    <script defer src="/js/pages/profile.js"></script>
     <%- include('partials/scripts') %>
   </body>
 </html>

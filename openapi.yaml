@@ -28,7 +28,7 @@ info:
 
     All mutating requests under `/api/v1` (except `/api/auth/*`) require a CSRF token:
 
-    1. `GET /api/v1/csrf-token` to obtain a token
+    1. `GET /api/v1/csrf-token` to obtain a token (requires a session)
     2. Send it in the `x-csrf-token` header on `POST`, `PUT`, `PATCH`, and `DELETE`
 
     ## Rate Limiting
@@ -76,7 +76,7 @@ paths:
       description: |
         Returns a CSRF token for mutating API requests.
         The token is also set in the `__preread_csrf` cookie.
-      security: []
+        Requires an authenticated session (`/api/auth` is the only public API prefix).
       responses:
         '200':
           description: CSRF token issued
@@ -88,6 +88,8 @@ paths:
                 default:
                   value:
                     csrfToken: eyJhbGciOiJIUzI1NiJ9.example
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /api/auth/get-session:
     get:
@@ -405,6 +407,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Document'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -413,7 +417,9 @@ paths:
       tags: [documents]
       operationId: documents_delete
       summary: Delete document
-      description: Deletes a document and all associated words and flashcards.
+      description: |
+        Deletes a document and all associated words and flashcards.
+        Returns `409` if processing is still active.
       security:
         - sessionCookie: []
           csrfToken: []
@@ -430,12 +436,16 @@ paths:
                 properties:
                   deleted:
                     type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/InvalidCsrf'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
 
   /api/v1/words:
     get:
@@ -457,6 +467,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WordListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -487,6 +499,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DueCardsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -624,6 +638,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinigameWordsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -722,6 +738,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Request conflicts with the current resource state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            document_processing:
+              value:
+                error: Cannot delete a document while processing is active
     InvalidCsrf:
       description: Missing or invalid CSRF token
       content:
@@ -859,7 +885,7 @@ components:
           format: email
         password:
           type: string
-          minLength: 1
+          minLength: 8
         image:
           type: string
           format: uri
@@ -902,6 +928,19 @@ components:
           default: false
         requestSignUp:
           type: boolean
+        idToken:
+          type: object
+          description: Provider ID token payload for completing sign-in without a redirect
+          required: [token]
+          properties:
+            token:
+              type: string
+            nonce:
+              type: string
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
         scopes:
           type: array
           items:
@@ -947,6 +986,7 @@ components:
       properties:
         newPassword:
           type: string
+          minLength: 8
         token:
           type: string
           description: Reset token (can also be passed as query parameter)
@@ -1103,17 +1143,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DueCard'
-
-    CefrReviewStats:
-      type: object
-      required: [cefr, total, due]
-      properties:
-        cefr:
-          $ref: '#/components/schemas/CefrLevel'
-        total:
-          type: integer
-        due:
-          type: integer
 
     ReviewStats:
       type: object
