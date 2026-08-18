@@ -4,9 +4,12 @@
   // מעדכן תווית נגישות לפי המצב הנוכחי
   function syncToggleA11y(theme) {
     const isDark = theme === 'dark';
+    const label = isDark ? 'מצב לילה' : 'מצב יום';
     document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
       btn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-      btn.setAttribute('aria-label', isDark ? 'מצב לילה' : 'מצב יום');
+      btn.setAttribute('aria-label', label);
+      const text = btn.querySelector('[data-theme-label]');
+      if (text) text.textContent = label;
     });
   }
 

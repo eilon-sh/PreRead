@@ -100,7 +100,7 @@ h1 {
   display: none;
   font-size: 0.875rem;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -119,13 +119,12 @@ h1 {
 @media (min-width: 768px) {
   .theme-toggle {
     width: auto;
-    height: auto;
+    height: 44px;
     padding: 0.5rem 0.85rem;
     gap: 0.45rem;
   }
 
-  [data-theme='light'] .theme-label-light,
-  [data-theme='dark'] .theme-label-dark {
+  .theme-toggle-label {
     display: inline;
   }
 }
