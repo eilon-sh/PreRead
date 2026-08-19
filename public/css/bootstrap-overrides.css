@@ -2,13 +2,17 @@
 
 :root,
 [data-theme='light'] {
-  --bs-secondary: #6b7280;
+  --bs-secondary: #4b5563;
   --bs-border-radius: 12px;
   --bs-border-radius-sm: 8px;
   --bs-emphasis-color: var(--text);
   --bs-secondary-color: var(--muted);
   --bs-tertiary-bg: var(--surface-2);
   --bs-tertiary-color: var(--muted);
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  --bs-success-bg-subtle: color-mix(in srgb, var(--success) 8%, var(--surface));
+  --bs-primary-border-subtle: color-mix(in srgb, var(--primary) 25%, var(--border));
+  --bs-success-border-subtle: color-mix(in srgb, var(--success) 25%, var(--border));
 }
 
 .card {
@@ -49,7 +53,7 @@
 
 .form-control::placeholder {
   color: var(--muted);
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .input-group-text {
@@ -305,4 +309,11 @@
 
 [data-theme='dark'] .level-badge {
   color: var(--on-primary);
+}
+
+[data-theme='dark'] {
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  --bs-success-bg-subtle: color-mix(in srgb, var(--success) 12%, var(--surface));
+  --bs-primary-border-subtle: color-mix(in srgb, var(--primary) 30%, var(--border));
+  --bs-success-border-subtle: color-mix(in srgb, var(--success) 30%, var(--border));
 }

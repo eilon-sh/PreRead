@@ -123,6 +123,16 @@
   font-weight: 700;
 }
 
+.landing-card-primary {
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border));
+}
+
+.landing-card-success {
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--success) 25%, var(--border));
+}
+
 @media (max-width: 768px) {
   .landing-demo-card {
     transform: none;
