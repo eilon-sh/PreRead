@@ -102,10 +102,12 @@
 
     flashcardArea.innerHTML = `
       <div class="card-body">
+        <div class="flashcard-progress text-muted small mb-0">כרטיס ${currentIndex + 1} מתוך ${cards.length} בסבב זה${batchHint ? '<br>' + batchHint : ''}</div>
+        <div class="flashcard pb-3 pt-0">
         <div class="flashcard-progress text-muted small mb-3">כרטיס ${currentIndex + 1} מתוך ${cards.length} בסבב זה</div>
         <div class="flashcard py-3">
           <div class="flashcard-front">
-            <h2 class="flashcard-word display-6 my-3">${escapeHtml(card.word)}</h2>
+            <h2 class="flashcard-word display-6 mt-1 mb-3">${escapeHtml(card.word)}</h2>
             ${card.context ? `<div class="flashcard-source"><span class="flashcard-source-label">משפט מתוך המסמך:</span><p class="flashcard-context text-muted fst-italic">"${escapeHtml(card.context)}"</p></div>` : ''}
           </div>
           <div class="flashcard-back ${revealed ? '' : 'hidden'} mt-4 p-3 rounded text-start">
