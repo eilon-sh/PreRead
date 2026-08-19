@@ -97,16 +97,16 @@
 .flashcard-progress {
   color: var(--muted);
   font-size: 0.85rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .flashcard {
-  padding: 1.5rem 0.5rem;
+  padding: 0 0.5rem 1.5rem;
 }
 
 .flashcard-word {
   font-size: clamp(1.5rem, 6vw, 2.5rem);
-  margin: 1rem 0;
+  margin: 0.25rem 0 1rem;
   direction: ltr;
 }
 
