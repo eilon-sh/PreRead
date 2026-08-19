@@ -363,7 +363,7 @@
 
 .duplex-guide-text {
   font-size: 0.9rem;
-  color: #4b5563;
+  color: var(--muted);
   margin: 0;
   line-height: 1.55;
 }
