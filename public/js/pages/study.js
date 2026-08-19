@@ -2,30 +2,35 @@
   let cards = [];
   let currentIndex = 0;
   let revealed = false;
+  let dueToday = 0;
+  let total = 0;
 
   const flashcardArea = document.getElementById('flashcardArea');
   const dueCount = document.getElementById('dueCount');
   const urlParams = new URLSearchParams(window.location.search);
 
-  // טוען סטטיסטיקות לימוד (ממתינים, סה״כ)
-  async function loadStats() {
-    const [reviewRes, profileRes] = await Promise.all([
-      apiFetch('/api/v1/reviews/stats'),
-      apiFetch('/api/v1/game/profile'),
-    ]);
-    if (isRateLimited(reviewRes) || isRateLimited(profileRes)) return;
-    const stats = await reviewRes.json();
-    const profile = await profileRes.json();
+  // מציג מונה כרטיסים ממתינים וסה״כ
+  function renderStats() {
     dueCount.innerHTML = `
       <span class="study-stat-chip">
-        <span class="study-stat-value">${stats.dueToday}</span>
+        <span class="study-stat-value">${dueToday}</span>
         <span class="study-stat-label">ממתינים היום</span>
       </span>
       <span class="study-stat-chip">
-        <span class="study-stat-value">${stats.total}</span>
+        <span class="study-stat-value">${total}</span>
         <span class="study-stat-label">סה״כ</span>
       </span>
     `;
+  }
+
+  // טוען סטטיסטיקות לימוד (ממתינים, סה״כ)
+  async function loadStats() {
+    const reviewRes = await apiFetch('/api/v1/reviews/stats');
+    if (isRateLimited(reviewRes)) return;
+    const stats = await reviewRes.json();
+    dueToday = stats.dueToday;
+    total = stats.total;
+    renderStats();
   }
 
   // מציג התראת XP והישגים
@@ -72,21 +77,36 @@
     }
 
     if (currentIndex >= cards.length) {
-      flashcardArea.innerHTML = `
-        <div class="card-body flashcard-done py-5">
-          <h2 class="h4">סיימת לסבב!</h2>
-          <p>עברת על ${cards.length} כרטיסים בסבב זה.</p>
-          <button class="btn btn-primary" id="restartBtn" type="button">התחל מחדש</button>
-        </div>
-      `;
-      document.getElementById('restartBtn')?.addEventListener('click', loadCards);
+      if (dueToday > 0) {
+        flashcardArea.innerHTML = `
+          <div class="card-body flashcard-done py-5">
+            <h2 class="h4">סיימת את הסבב!</h2>
+            <p>עברת על ${cards.length} כרטיסים בסבב זה.</p>
+            <p>נשארו עוד <strong>${dueToday}</strong> כרטיסים ממתינים היום.</p>
+            <button class="btn btn-primary" id="nextBatchBtn" type="button">המשך לקבוצה הבאה</button>
+          </div>
+        `;
+        document.getElementById('nextBatchBtn')?.addEventListener('click', loadCards);
+      } else {
+        flashcardArea.innerHTML = `
+          <div class="card-body flashcard-done py-5">
+            <h2 class="h4">כל הכבוד!</h2>
+            <p class="mb-0">סיימת את כל הכרטיסים להיום! חזור מחר או <a href="/upload">העלה מסמך חדש</a>.</p>
+          </div>
+        `;
+      }
       return;
     }
 
     const card = cards[currentIndex];
+    const remaining = cards.length - currentIndex;
+    const batchHint = dueToday > remaining
+      ? `<span class="batch-hint">עוד ${dueToday - remaining} ממתינים היום</span>`
+      : '';
+
     flashcardArea.innerHTML = `
       <div class="card-body">
-        <div class="flashcard-progress text-muted small mb-3">${currentIndex + 1} / ${cards.length}</div>
+        <div class="flashcard-progress text-muted small mb-3">כרטיס ${currentIndex + 1} מתוך ${cards.length} בסבב זה${batchHint ? '<br>' + batchHint : ''}</div>
         <div class="flashcard py-3">
           <div class="flashcard-front">
             <h2 class="flashcard-word display-6 my-3">${escapeHtml(card.word)}</h2>
@@ -156,6 +176,8 @@
             throw new Error('review failed');
           }
           const data = await res.json();
+          dueToday = Math.max(0, dueToday - 1);
+          renderStats();
           if (rateLabel) rateLabel.textContent = 'נשלח!';
           if (data.game) showXpToast(data.game);
           currentIndex++;
