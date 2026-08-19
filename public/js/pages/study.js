@@ -99,14 +99,10 @@
     }
 
     const card = cards[currentIndex];
-    const remaining = cards.length - currentIndex;
-    const batchHint = dueToday > remaining
-      ? `<span class="batch-hint">עוד ${dueToday - remaining} ממתינים היום</span>`
-      : '';
 
     flashcardArea.innerHTML = `
       <div class="card-body">
-        <div class="flashcard-progress text-muted small mb-3">כרטיס ${currentIndex + 1} מתוך ${cards.length} בסבב זה${batchHint ? '<br>' + batchHint : ''}</div>
+        <div class="flashcard-progress text-muted small mb-3">כרטיס ${currentIndex + 1} מתוך ${cards.length} בסבב זה</div>
         <div class="flashcard py-3">
           <div class="flashcard-front">
             <h2 class="flashcard-word display-6 my-3">${escapeHtml(card.word)}</h2>
