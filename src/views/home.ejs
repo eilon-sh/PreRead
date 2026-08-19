@@ -1,14 +1,27 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta
-      name="description"
-      content="Preread - כלי לסטודנטים: הפכו מאמרים וחומרי קורס לכרטיסיות לימוד עם חילוץ מילים אקדמיות לפי CEFR."
-    />
-    <meta name="theme-color" content="#4f46e5" />
-    <title>Preread - למדו אנגלית אקדמית מהקורסים שלכם</title>
+    <%- include('partials/seo') %>
+    <script type="application/ld+json">
+      <%- JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            name: 'Preread',
+            url: siteUrl,
+            inLanguage: 'he',
+          },
+          {
+            '@type': 'SoftwareApplication',
+            name: 'Preread',
+            description: typeof seoDescription === 'string' ? seoDescription : '',
+            url: siteUrl,
+            applicationCategory: 'EducationalApplication',
+          },
+        ],
+      }) %>
+    </script>
     <%- include('partials/theme-init') %>
     <%- include('partials/styles') %>
     <link rel="stylesheet" href="/css/pages/home.css" />
