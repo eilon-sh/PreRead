@@ -165,7 +165,7 @@
         const isReady = status === 'ready';
         const hasNoWords = isReady && (d.word_count || 0) === 0;
         const isFailed = status === 'failed';
-        const canDelete = isFailed && !String(d.id).startsWith('local-');
+        const canDelete = (isFailed || hasNoWords) && !String(d.id).startsWith('local-');
         const canOpenWords = isReady && !hasNoWords;
         const isProcessing = status === 'processing' || status === 'uploading';
 
