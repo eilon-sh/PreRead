@@ -207,6 +207,26 @@
   color: #166534;
 }
 
+.flashcard-source {
+  background: rgba(0, 0, 0, 0.03);
+  border-right: 3px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.25rem;
+  padding: 0.6rem 0.9rem;
+  margin-top: 0.75rem;
+  text-align: right;
+}
+
+.flashcard-source-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-bottom: 0.3rem;
+}
+
+.flashcard-source .flashcard-context {
+  margin-bottom: 0;
+}
+
 .flashcard-done {
   padding: 2rem 1rem;
 }

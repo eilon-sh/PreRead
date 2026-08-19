@@ -90,7 +90,7 @@
         <div class="flashcard py-3">
           <div class="flashcard-front">
             <h2 class="flashcard-word display-6 my-3">${escapeHtml(card.word)}</h2>
-            ${card.context ? `<p class="flashcard-context text-muted fst-italic">"${escapeHtml(card.context)}"</p>` : ''}
+            ${card.context ? `<div class="flashcard-source"><span class="flashcard-source-label">משפט מתוך המסמך:</span><p class="flashcard-context text-muted fst-italic">"${escapeHtml(card.context)}"</p></div>` : ''}
           </div>
           <div class="flashcard-back ${revealed ? '' : 'hidden'} mt-4 p-3 rounded text-start">
             <p class="flashcard-definition mb-2"><strong>הגדרה:</strong> ${escapeHtml(card.definition)}</p>
