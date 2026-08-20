@@ -30,6 +30,8 @@ export async function markDocumentFailed(documentId, err) {
   });
 }
 
+const KNOWN_PROCESSING_ERRORS = new Set(['UNPROCESSABLE_FILE']);
+
 // ממפה מסמך לפורמט תגובה
 function mapDocument(d, wordCount) {
   return {
@@ -37,6 +39,9 @@ function mapDocument(d, wordCount) {
     filename: decodeUploadedFilename(d.filename),
     min_cefr: d.minCefr ?? null,
     processing_status: d.processingStatus,
+    ...(KNOWN_PROCESSING_ERRORS.has(d.processingError)
+      ? { processing_error: d.processingError }
+      : {}),
     ...(wordCount !== undefined ? { word_count: wordCount } : {}),
   };
 }

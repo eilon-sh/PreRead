@@ -11,6 +11,7 @@
   const POLL_MAX_MS = 30000;
   const POLL_BACKOFF_FACTOR = 1.5;
   let pollDelayMs = POLL_INITIAL_MS;
+  const UNPROCESSABLE_FILE_MESSAGE = 'לא ניתן לעבד את הקובץ הזה. נסה קובץ אחר.';
 
   // בודק אם יש מסמכים בעיבוד
   function hasProcessingDocs(docs = cachedDocuments) {
@@ -197,9 +198,11 @@
 
         const statusNoteHtml = hasNoWords
           ? '<span class="text-muted small">לא נמצאו מילים</span>'
-          : isProcessing
-            ? '<span class="text-muted small">העיבוד עדיין רץ...</span>'
-            : '';
+          : isFailed && d.processing_error === 'UNPROCESSABLE_FILE'
+            ? `<span class="text-danger small">${escapeHtml(UNPROCESSABLE_FILE_MESSAGE)}</span>`
+            : isProcessing
+              ? '<span class="text-muted small">העיבוד עדיין רץ...</span>'
+              : '';
 
         const deleteBtnHtml = canDelete
           ? `<button type="button" class="btn btn-sm btn-outline-danger doc-action-btn js-delete-doc" data-doc-id="${d.id}" title="מחק" aria-label="מחק">
@@ -297,9 +300,17 @@
     }
 
     const doc = await res.json();
+    const previousDoc = cachedDocuments.find((item) => item.id === doc.id);
+    const becameUnprocessable =
+      previousDoc?.processing_status === 'processing' &&
+      doc.processing_status === 'failed' &&
+      doc.processing_error === 'UNPROCESSABLE_FILE';
     mergeDocumentUpdate(doc);
     renderDocuments(cachedDocuments);
     refreshDocumentsPolling(cachedDocuments);
+    if (becameUnprocessable) {
+      showStatusAlert(UNPROCESSABLE_FILE_MESSAGE, 'error');
+    }
   }
 
   // מעלה PDF ומוסיף לרשימה

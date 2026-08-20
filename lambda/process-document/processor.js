@@ -307,6 +307,7 @@ async function streamToBuffer(stream) {
   return Buffer.concat(chunks);
 }
 
+// נסינו לעשות את התוצאה כמה שיותר דטרמינסטית ביכולות ובמשאבים שיש לנו
 // שולח PDF ל-Bedrock ומחלץ מילים
 async function extractWordsFromPdf(pdfBuffer, minCefr) {
   const client = new AnthropicBedrock({
@@ -383,14 +384,20 @@ function formatProcessingError(err) {
   return raw.replace(/\s+/g, ' ').trim().slice(0, 1000);
 }
 
+// בודק אם Bedrock לא יכול לעבד את הקובץ (503 בשגיאה)
+function isUnprocessableBedrockError(err) {
+  const message = formatProcessingError(err);
+  return message.includes('503 Bedrock is unable to process your request');
+}
+
 // מסמן מסמך כנכשל בעיבוד
-async function markDocumentFailed(documentId, err) {
+async function markDocumentFailed(documentId, err, processingError = null) {
   const prisma = await getPrisma();
   await prisma.document.update({
     where: { id: documentId },
     data: {
       processingStatus: 'failed',
-      processingError: formatProcessingError(err),
+      processingError: processingError ?? formatProcessingError(err),
     },
   });
 }
@@ -425,6 +432,10 @@ export async function processS3Record(record) {
     });
   } catch (err) {
     console.error(`[document:${document.id}] lambda processing failed`, err);
+    if (isUnprocessableBedrockError(err)) {
+      await markDocumentFailed(document.id, err, 'UNPROCESSABLE_FILE');
+      return;
+    }
     // Keep status `processing` so SQS retries can find the row. Mark failed only
     // after redrive threshold (align with queue maxReceiveCount / DLQ).
     const receiveCount = Number(record.attributes?.ApproximateReceiveCount || '1');

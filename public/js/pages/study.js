@@ -106,7 +106,7 @@
         <div class="flashcard pb-3 pt-0">
           <div class="flashcard-front">
             <h2 class="flashcard-word display-6 mt-1 mb-3">${escapeHtml(card.word)}</h2>
-            ${card.context ? `<div class="flashcard-source"><span class="flashcard-source-label">משפט מתוך המסמך:</span><p class="flashcard-context text-muted fst-italic">"${escapeHtml(card.context)}"</p></div>` : ''}
+            ${card.context ? `<div class="flashcard-source"><span class="flashcard-source-label">משפט מתוך המסמך:</span><p class="flashcard-context text-muted fst-italic">${escapeHtml(card.context)}</p></div>` : ''}
           </div>
           <div class="flashcard-back ${revealed ? '' : 'hidden'} mt-4 p-3 rounded text-start">
             <p class="flashcard-definition mb-2"><strong>הגדרה:</strong> ${escapeHtml(card.definition)}</p>

@@ -36,9 +36,17 @@ info:
     Responses may include `Retry-After` when rate limited (`429`). Limits apply per route group
     (general API, auth, uploads, password reset email).
 
+    ## Document processing
+
+    Vocabulary extraction always runs in AWS Lambda, not in the Express process.
+    A local app (`http://localhost:3000`) still needs a deployed Lambda, an S3 upload bucket,
+    an SQS trigger, and AWS credentials.
+
+    Flow: Upload → S3 → SQS → Lambda → Bedrock → RDS
+
 servers:
   - url: http://localhost:3000
-    description: Local development
+    description: Local development (document processing still requires AWS Lambda)
   - url: '{baseUrl}'
     description: Production
     variables:
@@ -1015,6 +1023,9 @@ components:
         processing_status:
           type: string
           enum: [processing, ready, failed]
+        processing_error:
+          type: string
+          enum: [UNPROCESSABLE_FILE]
 
     Document:
       type: object
@@ -1029,6 +1040,9 @@ components:
         processing_status:
           type: string
           enum: [processing, ready, failed]
+        processing_error:
+          type: string
+          enum: [UNPROCESSABLE_FILE]
         word_count:
           type: integer
 
