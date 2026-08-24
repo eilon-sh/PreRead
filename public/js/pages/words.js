@@ -292,17 +292,22 @@
     deleteDocBtn.hidden = !visible;
   }
 
-  // מביא שם מסמך לתצוגה
-  async function getDocumentName() {
-    if (!documentId) return 'המסמך';
+  // מביא את המסמך אם הוא קיים
+  async function fetchDocument() {
+    if (!documentId) return null;
     try {
       const res = await apiFetch(`/api/v1/documents/${documentId}`);
-      if (!res.ok) return 'המסמך';
-      const doc = await res.json();
-      return doc.filename || 'המסמך';
+      if (!res.ok) return null;
+      return await res.json();
     } catch {
-      return 'המסמך';
+      return null;
     }
+  }
+
+  // מביא שם מסמך לתצוגה
+  async function getDocumentName() {
+    const doc = await fetchDocument();
+    return doc?.filename || 'המסמך';
   }
 
   // מוחק מסמך אחרי אישור משתמש
@@ -352,11 +357,14 @@
 
     if (data.words.length === 0) {
       if (printCardsLink) printCardsLink.hidden = true;
-      setDeleteButtonVisible(Boolean(documentId));
+      const doc = await fetchDocument();
+      setDeleteButtonVisible(Boolean(doc));
       if (wordsSummary) wordsSummary.hidden = true;
-      const emptyMessage = documentId
+      const emptyMessage = doc
         ? 'לא נמצאו מילים במסמך הזה. נסה להעלות מסמך אחר.'
-        : 'אין מילים עדיין. <a class="words-empty-link" href="/upload">העלה PDF</a> כדי להתחיל.';
+        : documentId
+          ? 'המסמך לא נמצא.'
+          : 'אין מילים עדיין. <a class="words-empty-link" href="/upload">העלה PDF</a> כדי להתחיל.';
       wordsTable.innerHTML = renderEmptyState(emptyMessage);
       return;
     }

@@ -7,6 +7,8 @@ Console-only guide for the PDF processing pipeline and app host in **us-east-1**
 
 **Disclaimer:** This guide uses the EC2 **public IP** over **HTTP**. It does **not** cover domain names, DNS, TLS certificates, HTTPS, or Route 53.
 
+This document is the **minimal** path to a working pipeline and app host. It does **not** install or use extra packages from the demo instance such as Glances, GoAccess, httpd-tools, or similar optional monitoring/load-test tools. Those are not required for the app to run.
+
 ---
 
 ## Prerequisites
