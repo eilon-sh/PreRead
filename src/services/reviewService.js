@@ -1,6 +1,9 @@
 import prisma from '#db/prisma.js';
+import config from '#config.js';
 import { calculateSm2 } from '#services/sm2Service.js';
 import { processReview } from './gameService.js';
+
+const LOCAL_TX_OPTIONS = config.isProduction ? undefined : { maxWait: 10_000, timeout: 20_000 };
 
 // מעדכן כרטיס ומעניק XP
 export async function submitFlashcardReview(userId, flashcardId, quality) {
@@ -34,5 +37,5 @@ export async function submitFlashcardReview(userId, flashcardId, quality) {
       quality,
       game: gameResult,
     };
-  });
+  }, LOCAL_TX_OPTIONS);
 }

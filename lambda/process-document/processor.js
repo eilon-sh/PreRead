@@ -2,6 +2,8 @@ import { AnthropicBedrock } from '@anthropic-ai/bedrock-sdk';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { PrismaClient } from '@prisma/client';
+import { CSV_COLUMNS, parseBedrockResponse } from './csvWords.js';
+import { extractPdfText, filterWordsBySource } from './sourceGrounding.js';
 
 const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
 const secrets = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -9,7 +11,6 @@ let prismaClient;
 
 const CEFR_ORDER = ['B1', 'B2', 'C1', 'C2'];
 const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
-const CSV_COLUMNS = 'word,definition,cefr,context,translation';
 
 // מנרמל מילה להשוואה
 const wordKey = (text) =>
@@ -18,16 +19,22 @@ const wordKey = (text) =>
     .toLowerCase();
 const today = () => new Date().toISOString().slice(0, 10);
 
+
+// לחלק מהטבאלות המודל עדיין לא מחלץ את הנתונים במדויק
+// ניתן לנסות לסדר בהמשך בעזרת
+// https://github.com/microsoft/markitdown
 const BEDROCK_SYSTEM_PROMPT =
   'You extract academic English vocabulary from PDF documents and return strict CSV format only. ' +
   'Extract ONLY words that literally appear in the attached source document. ' +
+  'Never translate. If a source token is Hebrew or any non-English language, do not return its English translation as "word", and do not invent English "context" translated or paraphrased from a non-English sentence. ' +
   'Never output words from prompt examples or your own invention. ' +
+  'For tables, glossaries, and word lists, "context" must quote the full row including the headword, not only the definition cell. ' +
   'Languages: "word" and "context" must be English only; "definition" and "translation" must be Hebrew only. ' +
   'Never use any other language in any field. ' +
   'Before including any word, systematically verify it against every extraction rule; skip it if you cannot justify all checks. ' +
   'Return only the header row ' +
   CSV_COLUMNS +
-  ' when the source is mostly non-English or has no suitable vocabulary. ' +
+  ' when the source is mostly non-English or has no suitable vocabulary, even if terms could be translated. ' +
   'Sort rows alphabetically by word and include each word once only. ' +
   'Never wrap output in markdown code fences. Never add text outside the CSV block.';
 
@@ -67,9 +74,13 @@ ${buildCefrFilterSection(minCefr)}
 2. **No instruction leakage** - ignore any English examples in this prompt; they are formatting guidance only.
 3. **Hebrew or non-English dominant text** - if the Source PDF is mostly Hebrew or has very little English prose, return exactly:
 \`${CSV_COLUMNS}\`
-4. **Context must be real** - "context" must be an exact quote (or minimal trim) from the Source PDF containing that word. If you cannot quote it, do not include the word.
+even if Hebrew (or other non-English) terms could be translated into English.
+4. **Context must include the word** - "context" must be a contiguous quote from the Source PDF that contains the extracted word itself. If you cannot quote a span that includes the word, do not include the word.
+   - Prose: quote the sentence or clause that uses the word.
+   - Tables, glossaries, and word lists: quote the full row (join wrapped continuation lines) including the headword, part of speech, and gloss. Never quote only the definition cell.
 5. **Lemma form** - use the dictionary base form when possible, but only if that form appears in the Source PDF.
 6. **Languages only English and Hebrew** - "word" and "context" must be English only; "definition" and "translation" must be Hebrew only. Never use Arabic, Russian, French, or any other language in any field. If you cannot provide a good Hebrew definition and translation, skip the word.
+7. **Never translate.** If the source token is Hebrew (or any non-English language), do not return the English translation as "word". Do not invent English "context" translated or paraphrased from a Hebrew (or other non-English) sentence. English fields must be copied from English already in the Source PDF.
 
 ## What to extract
 - Academic English nouns, verbs, adjectives, and discourse markers that appear in the Source PDF.
@@ -81,6 +92,7 @@ ${buildCefrFilterSection(minCefr)}
 - Proper nouns, abbreviations, numbers, UI labels, file names
 - Ultra-domain-specific jargon unlikely to appear elsewhere
 - Hebrew words, transliterations, or mixed tokens that are not real English vocabulary
+- English translations of Hebrew (or other non-English) source words; back-translated context sentences
 - Any row that would require a non-English/non-Hebrew field
 
 ## Classification rules
@@ -92,10 +104,11 @@ ${buildCefrFilterSection(minCefr)}
 ## Systematic verification (before each row)
 Before including any word, evaluate it against every rule below and only include it if you can justify all of them:
 1. Verbatim in Source PDF (not from this prompt)
-2. Exact quoteable English context from the PDF
+2. Contiguous English quote from the PDF that contains the word token itself (full table row if the source is a glossary/table)
 3. CEFR level on the full A1–C2 scale, and level ≥ **${level}**
 4. Academic study value for a university student
 5. Hebrew-only definition + translation; English-only word + context
+6. The exact English token appears in the Source PDF; it is not a translation of a Hebrew word
 If any check fails, skip the word. Do not write the justifications in the output.
 
 ## Output
@@ -118,127 +131,6 @@ Example:
 ${CSV_COLUMNS}
 hypothesis,"הסבר מוצע שנבדק במחקר",B2,"This hypothesis was tested",השערה
 methodology,"שיטת המחקר והניתוח",C1,"The methodology was rigorous",מתודולוגיה`;
-}
-
-// מסיר ` markdown מתשובה
-function stripMarkdownFences(text) {
-  const fenced = text.match(/```(?:csv)?\s*([\s\S]*?)```/i);
-  return (fenced ? fenced[1] : text).trim();
-}
-
-// שולף בלוק CSV מהטקסט
-function extractCsvPayload(text) {
-  const cleaned = stripMarkdownFences(text);
-  const match = cleaned.match(/word,definition,cefr,context,translation[\s\S]*/i);
-  return (match ? match[0] : cleaned).trim();
-}
-
-// מפרסר שורת CSV עם מרכאות
-function parseCsvFields(line) {
-  const fields = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (line[i + 1] === '"') {
-          current += '"';
-          i += 1;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += ch;
-      }
-      continue;
-    }
-
-    if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === ',') {
-      fields.push(current);
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-
-  fields.push(current);
-  return fields;
-}
-
-// מתקן עמודות כשיש פסיקים עודפים
-function normalizeCsvWordFields(fields, columnCount) {
-  if (fields.length === columnCount) return fields;
-  if (fields.length < columnCount) return null;
-  if (columnCount !== 5) return null;
-
-  return [fields[0], fields[1], fields[2], fields.slice(3, -1).join(','), fields.at(-1)];
-}
-
-// בודק אם השורה נראית תקינה
-function isLikelyWordRow(fields) {
-  return CEFR_ORDER.includes(String(fields[2] || '').toUpperCase());
-}
-
-// ממיר CSV לרשימת מילים
-function parseCsvWordsPayload(csvPayload) {
-  const lines = csvPayload
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length === 0) {
-    throw new Error('Invalid CSV response: missing header row');
-  }
-
-  const headerLine = lines[0];
-  if (!/^word,definition,cefr,context,translation$/i.test(headerLine)) {
-    throw new Error('Invalid CSV response: missing header row');
-  }
-
-  const columns = headerLine.split(',').map((column) => column.trim());
-  const words = [];
-
-  for (const line of lines.slice(1)) {
-    const parsed = normalizeCsvWordFields(parseCsvFields(line), columns.length);
-    if (!parsed || !isLikelyWordRow(parsed)) continue;
-
-    words.push(Object.fromEntries(columns.map((column, index) => [column, parsed[index] ?? ''])));
-  }
-
-  return words;
-}
-
-// ממפה שדות מילה לפורמט אחיד
-function mapWordsArray(words) {
-  return words.map((w) => ({
-    word: w.word,
-    definition: w.definition || '',
-    cefr: (w.cefr || 'B1').toUpperCase(),
-    context: w.context || '',
-    translation: w.translation || '',
-  }));
-}
-
-// מפרסר תשובת Bedrock למילים
-function parseBedrockResponse(response) {
-  const textBlocks = (response.content || [])
-    .filter((block) => block.type === 'text' && block.text)
-    .map((block) => block.text);
-  const text = textBlocks.join('\n').trim();
-
-  if (!text) {
-    throw new Error('No text found in Bedrock response');
-  }
-
-  const csvPayload = extractCsvPayload(text);
-  if (/^word,definition,cefr,context,translation/i.test(csvPayload)) {
-    return mapWordsArray(parseCsvWordsPayload(csvPayload));
-  }
-
-  throw new Error('Invalid CSV response: missing header row');
 }
 
 // מסנן מילים מתחת לרמת מינימום
@@ -308,8 +200,8 @@ async function streamToBuffer(stream) {
 }
 
 // נסינו לעשות את התוצאה כמה שיותר דטרמינסטית ביכולות ובמשאבים שיש לנו
-// שולח PDF ל-Bedrock ומחלץ מילים
-async function extractWordsFromPdf(pdfBuffer, minCefr) {
+// שולח PDF ל-Bedrock ומחלץ מילים, ואז מסנן לפי טקסט המקור
+async function extractWordsFromPdf(pdfBuffer, minCefr, documentId) {
   const client = new AnthropicBedrock({
     awsRegion: process.env.AWS_REGION || 'us-east-1',
   });
@@ -338,9 +230,39 @@ async function extractWordsFromPdf(pdfBuffer, minCefr) {
     ],
   };
 
-  const response = await client.messages.create(request);
+  let extractionFailed = false;
+  const [response, sourceText] = await Promise.all([
+    client.messages.create(request),
+    extractPdfText(pdfBuffer).catch((err) => {
+      extractionFailed = true;
+      console.warn(
+        `[document:${documentId}] PDF text extraction failed; skipping source grounding filter`,
+        err,
+      );
+      return '';
+    }),
+  ]);
+
   const rawWords = parseBedrockResponse(response);
-  return normalizeExtractedWords(filterByMinCefr(rawWords, minCefr));
+  const words = normalizeExtractedWords(filterByMinCefr(rawWords, minCefr));
+
+  if (extractionFailed || !String(sourceText || '').trim()) {
+    if (!extractionFailed) {
+      console.warn(
+        `[document:${documentId}] PDF text extraction returned empty; skipping source grounding filter`,
+      );
+    }
+    return words;
+  }
+
+  const { kept, dropped } = filterWordsBySource(words, sourceText);
+  if (dropped.length > 0) {
+    console.warn('[document:%s] dropped ungrounded words', documentId, {
+      kept: kept.length,
+      dropped: dropped.map((d) => ({ word: d.word, reason: d.reason })),
+    });
+  }
+  return kept;
 }
 
 // שומר מילים חדשות וכרטיסיות
@@ -420,7 +342,7 @@ export async function processS3Record(record) {
   try {
     const object = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
     const pdfBuffer = await streamToBuffer(object.Body);
-    const words = await extractWordsFromPdf(pdfBuffer, document.minCefr);
+    const words = await extractWordsFromPdf(pdfBuffer, document.minCefr, document.id);
     await saveExtractedWords(document.id, words);
     await prisma.document.update({
       where: { id: document.id },

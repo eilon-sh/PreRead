@@ -18,14 +18,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "test": "node test/parseIntUtils.test.js && node test/e2e.js",
+    "test": "node test/parseIntUtils.test.js && node test/sourceGrounding.test.js && node test/csvWords.test.js && node test/e2e.js",
     "check": "prettier --check .",
     "fix": "prettier --write ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.883.0",
     "@prisma/client": "^6.19.3",
-    "better-auth": "^1.6.23",
+    "better-auth": "1.6.23",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "csrf-csrf": "^4.0.3",
@@ -53,6 +53,7 @@
     },
     "@prisma/config": {
       "deepmerge-ts": "8.0.1"
-    }
+    },
+    "ip-address": "10.5.0"
   }
 }

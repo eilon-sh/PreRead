@@ -47,7 +47,7 @@ jobs:
           rm -rf "$BUILD"
           mkdir -p "$BUILD"
 
-          cp lambda/process-document/{index.js,processor.js,package.json,package-lock.json} "$BUILD/"
+          cp lambda/process-document/*.js lambda/process-document/package.json lambda/process-document/package-lock.json "$BUILD/"
 
           # Production deps only
           (cd "$BUILD" && npm ci --omit=dev)
@@ -75,7 +75,7 @@ jobs:
 
           ZIP=.build/lambda.zip
           rm -f "$ZIP"
-          (cd "$BUILD" && zip -X -r -q "../lambda.zip" index.js processor.js package.json node_modules)
+          (cd "$BUILD" && zip -X -r -q "../lambda.zip" *.js package.json node_modules)
           echo "Built $ZIP ($(du -m "$ZIP" | cut -f1) MB)"
 
       - name: Upload to S3 and update Lambda
