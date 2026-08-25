@@ -4,6 +4,7 @@
   let revealed = false;
   let dueToday = 0;
   let total = 0;
+  let shouldRestoreFocus = false;
 
   const flashcardArea = document.getElementById('flashcardArea');
   const dueCount = document.getElementById('dueCount');
@@ -64,6 +65,18 @@
     loadStats();
   }
 
+  // מחזיר פוקוס אחרי רינדור innerHTML
+  function restoreFlashcardFocus() {
+    shouldRestoreFocus = false;
+    const nextControl =
+      document.getElementById('revealBtn') ||
+      document.querySelector('.rate-btn') ||
+      document.getElementById('nextBatchBtn') ||
+      flashcardArea.querySelector('a') ||
+      flashcardArea;
+    nextControl.focus();
+  }
+
   // מציג כרטיס נוכחי או סיום
   function renderCard() {
     if (cards.length === 0) {
@@ -73,6 +86,7 @@
           <p class="mb-0">אין כרטיסים ממתינים כרגע. חזור מחר או <a href="/upload">העלה מסמך חדש</a>.</p>
         </div>
       `;
+      if (shouldRestoreFocus) restoreFlashcardFocus();
       return;
     }
 
@@ -86,7 +100,10 @@
             <button class="btn btn-primary" id="nextBatchBtn" type="button">המשך לקבוצה הבאה</button>
           </div>
         `;
-        document.getElementById('nextBatchBtn')?.addEventListener('click', loadCards);
+        document.getElementById('nextBatchBtn')?.addEventListener('click', () => {
+          shouldRestoreFocus = true;
+          loadCards();
+        });
       } else {
         flashcardArea.innerHTML = `
           <div class="card-body flashcard-done py-5">
@@ -95,6 +112,7 @@
           </div>
         `;
       }
+      if (shouldRestoreFocus) restoreFlashcardFocus();
       return;
     }
 
@@ -116,15 +134,15 @@
         <div class="flashcard-actions mt-4">
           ${
             !revealed
-              ? '<button class="btn btn-primary btn-lg" id="revealBtn">הצג תשובה</button>'
+              ? '<button class="btn btn-primary btn-lg" id="revealBtn" type="button">הצג תשובה</button>'
               : `
               <p class="rate-label fw-semibold mb-3">עד כמה ידעת?</p>
               <div class="rate-buttons d-flex flex-wrap justify-content-center gap-2">
-                <button class="btn rate-btn rate-0" data-q="0">שכחתי</button>
-                <button class="btn rate-btn rate-2" data-q="2">קשה</button>
-                <button class="btn rate-btn rate-3" data-q="3">טוב</button>
-                <button class="btn rate-btn rate-4" data-q="4">קל</button>
-                <button class="btn rate-btn rate-5" data-q="5">מושלם</button>
+                <button class="btn rate-btn rate-0" data-q="0" type="button">שכחתי</button>
+                <button class="btn rate-btn rate-2" data-q="2" type="button">קשה</button>
+                <button class="btn rate-btn rate-3" data-q="3" type="button">טוב</button>
+                <button class="btn rate-btn rate-4" data-q="4" type="button">קל</button>
+                <button class="btn rate-btn rate-5" data-q="5" type="button">מושלם</button>
               </div>
             `
           }
@@ -136,6 +154,7 @@
     if (revealBtn) {
       revealBtn.addEventListener('click', () => {
         revealed = true;
+        shouldRestoreFocus = true;
         renderCard();
       });
     }
@@ -178,6 +197,7 @@
           if (data.game) showXpToast(data.game);
           currentIndex++;
           revealed = false;
+          shouldRestoreFocus = true;
           renderCard();
         } catch {
           if (rateLabel) rateLabel.textContent = 'עד כמה ידעת?';
@@ -189,6 +209,8 @@
         }
       });
     });
+
+    if (shouldRestoreFocus) restoreFlashcardFocus();
   }
 
   loadCards();

@@ -1,4 +1,5 @@
 import prisma from '#db/prisma.js';
+import { decodeUploadedFilename } from '#utils/filenameUtils.js';
 
 // ממפה מילה לפורמט API
 export function mapWord(w) {
@@ -10,7 +11,7 @@ export function mapWord(w) {
     cefr: w.cefr,
     context: w.context,
     translation: w.translation,
-    filename: w.document.filename,
+    filename: decodeUploadedFilename(w.document.filename),
     flashcard_id: w.flashcard?.id,
     next_review: w.flashcard?.nextReview,
     repetitions: w.flashcard?.repetitions,

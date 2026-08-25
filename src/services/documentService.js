@@ -1,15 +1,11 @@
-import path from 'node:path';
 import { fileTypeFromBuffer } from 'file-type';
 import prisma from '#db/prisma.js';
 import { uploadPdfToS3 } from '#services/s3Service.js';
-import { decodeUploadedFilename } from '#utils/filenameUtils.js';
-
-// בונה מפתח S3 ייחודי
-function buildDocumentS3Key(userId, filename) {
-  const base = path.basename(filename ?? 'document', '.pdf');
-  const normalized = base.replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 80) || 'document';
-  return `${userId}-${Date.now()}-${normalized}.pdf`;
-}
+import {
+  buildDocumentS3Key,
+  decodeUploadedFilename,
+  sanitizeDisplayFilename,
+} from '#utils/filenameUtils.js';
 
 // מקצר הודעת שגיאת עיבוד
 function formatProcessingError(err) {
@@ -95,20 +91,16 @@ export async function uploadDocument(userId, { buffer, originalname, minCefr }) 
     throw Object.assign(new Error('Uploaded file is not a valid PDF'), { status: 400 });
   }
 
-  const filename = decodeUploadedFilename(originalname);
-  const s3Key = buildDocumentS3Key(userId, filename);
+  const filename = sanitizeDisplayFilename(originalname);
+  const s3Key = buildDocumentS3Key(userId, decodeUploadedFilename(originalname));
+
+  await uploadPdfToS3({ key: s3Key, buffer });
+
   const result = await createDocumentRecord(userId, {
     filename,
     minCefr,
     s3Key,
   });
-
-  try {
-    await uploadPdfToS3({ key: s3Key, buffer });
-  } catch (uploadErr) {
-    await markDocumentFailed(result.id, uploadErr);
-    throw uploadErr;
-  }
 
   return {
     ...result,

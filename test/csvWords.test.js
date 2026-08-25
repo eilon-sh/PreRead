@@ -98,4 +98,61 @@ also,"גם",C2,"Also include this",גם`),
   );
 }
 
+{
+  const words = parseBedrockResponse(
+    csvResponse(`WORD,DEFINITION,CEFR,CONTEXT,TRANSLATION
+hypothesis,"הסבר מוצע",B2,"This hypothesis was tested",השערה`),
+  );
+  assert.equal(words.length, 1);
+  assert.equal(words[0].word, 'hypothesis');
+  assert.equal(words[0].cefr, 'B2');
+}
+
+{
+  const words = parseBedrockResponse(
+    csvResponse(`word, definition, cefr, context, translation
+hypothesis,"הסבר מוצע",B2,"This hypothesis was tested",השערה`),
+  );
+  assert.equal(words.length, 1);
+  assert.equal(words[0].word, 'hypothesis');
+}
+
+{
+  const words = parseBedrockResponse(
+    csvResponse(`return word,definition,cefr,context,translation please
+word,definition,cefr,context,translation
+hypothesis,"הסבר מוצע",B2,"This hypothesis was tested",השערה`),
+  );
+  assert.equal(words.length, 1);
+  assert.equal(words[0].word, 'hypothesis');
+}
+
+{
+  const words = parseBedrockResponse(
+    csvResponse(`word,definition,cefr,context,translation
+,empty word,B2,This was tested,ריק
+keep,"להשאיר",B2,"Please keep this",לשמור`),
+  );
+  assert.equal(words.map((w) => w.word).join(','), 'keep');
+}
+
+{
+  const words = parseBedrockResponse(
+    csvResponse(
+      'word,definition,cefr,context,translation\nanalysis,ניתוח,B2,The analysis however was incomplete,ניתוח,',
+    ),
+  );
+  assert.equal(words.length, 0);
+}
+
+{
+  const words = parseBedrockResponse(
+    csvResponse(
+      'word,definition,cefr,context,translation\nanalysis,ניתוח,B2,The analysis was incomplete,ni,extra',
+    ),
+  );
+  assert.equal(words.length, 0);
+}
+
 console.log('csvWords tests passed');
+

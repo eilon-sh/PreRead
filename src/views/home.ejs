@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="/css/pages/home.css" />
   </head>
   <body class="landing-page">
+    <%- include('partials/skip-link') %>
     <header class="landing-header sticky-top">
       <div class="container d-flex align-items-center justify-content-between gap-3 py-3">
         <div class="d-flex align-items-center gap-2">
@@ -39,7 +40,7 @@
       </div>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <section class="landing-hero">
         <div class="container">
           <div class="row align-items-center g-4 g-lg-5">

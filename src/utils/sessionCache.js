@@ -43,6 +43,18 @@ export function setCachedSession(key, session) {
 export function extractSessionCacheKey(cookieHeader) {
   if (!cookieHeader) return null;
 
-  const match = cookieHeader.match(/(?:^|;\s*)better-auth\.session_token=([^;]+)/);
+  const match = cookieHeader.match(
+    /(?:^|;\s*)(?:__Secure-|__Host-)?better-auth\.session_token=([^;]+)/,
+  );
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * Remove a cached session. No-op if key is missing.
+ * @param {string | null | undefined} key
+ * @returns {void}
+ */
+export function deleteCachedSession(key) {
+  if (!key) return;
+  cache.delete(key);
 }

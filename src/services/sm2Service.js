@@ -20,20 +20,8 @@
  */
 
 import prisma from '#db/prisma.js';
-import { today } from '#utils/dateUtils.js';
-
-/**
- * Add a number of calendar days to an ISO date string (YYYY-MM-DD).
- *
- * @param {string} dateStr - Base date in YYYY-MM-DD format
- * @param {number} days - Number of days to add
- * @returns {string} Resulting date in YYYY-MM-DD format
- */
-function addDays(dateStr, days) {
-  const d = new Date(`${dateStr}T12:00:00`);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
+import { addDays, today } from '#utils/dateUtils.js';
+import { decodeUploadedFilename } from '#utils/filenameUtils.js';
 
 /**
  * Apply one SM-2 review step to a flashcard.
@@ -106,7 +94,7 @@ function mapDueCard(f) {
     context: f.word.context,
     translation: f.word.translation,
     document_id: f.word.documentId,
-    filename: f.word.document.filename,
+    filename: decodeUploadedFilename(f.word.document.filename),
   };
 }
 

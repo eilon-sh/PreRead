@@ -3,6 +3,12 @@
 // שולח טופס הרשמה לשרת
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const password = document.getElementById('password').value;
+  const passwordConfirm = document.getElementById('passwordConfirm').value;
+  if (password !== passwordConfirm) {
+    showStatusAlert('הסיסמאות אינן תואמות', 'error');
+    return;
+  }
   const res = await fetch('/api/auth/sign-up/email', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -10,7 +16,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     body: JSON.stringify({
       name: document.getElementById('name').value,
       email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
+      password,
     }),
   });
   const data = await res.json();

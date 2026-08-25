@@ -12,8 +12,9 @@
     <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
+    <%- include('partials/skip-link') %>
     <%- include('partials/nav') %>
-    <main class="container app-container">
+    <main id="main-content" class="container app-container" tabindex="-1">
       <section class="card mb-4">
         <div class="card-body">
           <form id="uploadForm" enctype="multipart/form-data">

@@ -12,8 +12,9 @@
     <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
+    <%- include('partials/skip-link') %>
     <%- include('partials/nav') %>
-    <main class="container app-container">
+    <main id="main-content" class="container app-container" tabindex="-1">
       <h1 class="h3">הישגים</h1>
       <p class="subtitle text-muted">פתח הישגים על ידי למידה, רצפים ושליטה במילים</p>
 
