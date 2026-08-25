@@ -3,6 +3,7 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { PrismaClient } from '@prisma/client';
 import { CSV_COLUMNS, parseBedrockResponse } from './csvWords.js';
+import { prepareExtractedWordsForSave, wordKey } from './extractedWordsSave.js';
 import { extractPdfText, filterWordsBySource } from './sourceGrounding.js';
 
 const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -12,12 +13,13 @@ let prismaClient;
 const CEFR_ORDER = ['B1', 'B2', 'C1', 'C2'];
 const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || 'global.anthropic.claude-sonnet-4-6';
 
-// מנרמל מילה להשוואה
-const wordKey = (text) =>
-  String(text || '')
-    .trim()
-    .toLowerCase();
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 
 // לחלק מהטבאלות המודל עדיין לא מחלץ את הנתונים במדויק
@@ -273,7 +275,7 @@ async function saveExtractedWords(documentId, words) {
     select: { word: true },
   });
   const existingKeys = new Set(existingRows.map((row) => wordKey(row.word)));
-  const filtered = words.filter((w) => !existingKeys.has(wordKey(w.word)));
+  const filtered = prepareExtractedWordsForSave(words, existingKeys);
   if (filtered.length === 0) return;
 
   await prisma.$transaction(async (tx) => {

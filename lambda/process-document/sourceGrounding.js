@@ -3,30 +3,38 @@ import { extractText, getDocumentProxy } from 'unpdf';
 const WORD_BOUNDARY_RE_SPECIALS = /[.*+?^${}()|[\]\\]/g;
 const SENTENCE_BOUNDARY_RE = /[.!?]["']?\s+[A-Z]/;
 const MAX_CONTEXT_LINE_SPAN = 3;
+const LATIN_HEADWORD_RE = /^[\p{Script=Latin}\p{M}'-]+$/u;
 
 // בורח תווי רגקס מיוחדים במילה
 function escapeRegExp(text) {
   return String(text).replace(WORD_BOUNDARY_RE_SPECIALS, '\\$&');
 }
 
+function tokenBoundaryPattern(word, flags = 'u') {
+  return new RegExp(
+    `(?<![\\p{L}\\p{M}'-])${escapeRegExp(word)}(?![\\p{L}\\p{M}'-])`,
+    flags,
+  );
+}
+
 // בודק שהמילה מופיעה כטוקן שלם בטקסט מנורמל
 function hasWordBoundaryMatch(word, text) {
   if (!word) return false;
-  const pattern = new RegExp(`\\b${escapeRegExp(word)}\\b`);
-  return pattern.test(text);
+  return tokenBoundaryPattern(word).test(text);
 }
 
 // מאחד רווחים לתצוגה בלי לשנות אותיות
 function collapseDisplayWhitespace(text) {
   return String(text || '')
-    .replace(/(\w)-\s*\n\s*(\w)/g, '$1$2')
+    .replace(/\u00AD/g, '')
+    .replace(/([\p{L}\p{M}])-\s*\n\s*([\p{L}\p{M}])/gu, '$1$2')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 // מוצא את כל מופעי המילה כטוקן שלם
 function findWordOccurrences(text, word) {
-  const pattern = new RegExp(`\\b${escapeRegExp(word)}\\b`, 'gi');
+  const pattern = tokenBoundaryPattern(word, 'giu');
   const occurrences = [];
   let match = pattern.exec(text);
   while (match) {
@@ -50,8 +58,8 @@ function expandContextToIncludeWord(word, context, sourceText) {
   for (let span = 1; span <= MAX_CONTEXT_LINE_SPAN; span += 1) {
     for (let i = 0; i + span <= lines.length; i += 1) {
       const windowText = collapseDisplayWhitespace(lines.slice(i, i + span).join(' '));
-      const normalizedWindow = normalizeSourceText(windowText);
-      if (!normalizedWindow.includes(normalizedContext)) continue;
+      const normalizedWindow = normalizeContextMatchText(windowText);
+      if (!normalizedWindow.includes(normalizeContextMatchText(context))) continue;
 
       const contextIndex = windowText.toLowerCase().indexOf(collapseDisplayWhitespace(context).toLowerCase());
       if (contextIndex === -1) continue;
@@ -84,9 +92,18 @@ export function normalizeSourceText(text) {
   return String(text || '')
     .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
     .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
-    .replace(/(\w)-\s*\n\s*(\w)/g, '$1$2')
+    .replace(/\u00AD/g, '')
+    .replace(/([\p{L}\p{M}])-\s*\n\s*([\p{L}\p{M}])/gu, '$1$2')
     .replace(/\s+/g, ' ')
     .toLowerCase()
+    .trim();
+}
+
+// משווה הקשר בלי פסיקים עודפים מהמודל
+function normalizeContextMatchText(text) {
+  return normalizeSourceText(text)
+    .replace(/,/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -112,13 +129,15 @@ export function filterWordsBySource(words, sourceText) {
     const context = String(entry.context || '').trim();
     const normalizedWord = normalizeSourceText(word);
     const normalizedContext = normalizeSourceText(context);
+    const matchSource = normalizeContextMatchText(sourceText);
+    const matchContext = normalizeContextMatchText(context);
 
-    if (!hasWordBoundaryMatch(normalizedWord, normalizedSource)) {
+    if (!LATIN_HEADWORD_RE.test(normalizedWord) || !hasWordBoundaryMatch(normalizedWord, normalizedSource)) {
       dropped.push({ ...entry, reason: 'word_not_in_pdf' });
       continue;
     }
 
-    if (!normalizedContext || !normalizedSource.includes(normalizedContext)) {
+    if (!matchContext || !matchSource.includes(matchContext)) {
       dropped.push({ ...entry, reason: 'context_not_in_pdf' });
       continue;
     }
@@ -138,7 +157,7 @@ export function filterWordsBySource(words, sourceText) {
       continue;
     }
 
-    if (!normalizedSource.includes(groundedNormalizedContext)) {
+    if (!matchSource.includes(normalizeContextMatchText(groundedContext))) {
       dropped.push({ ...entry, reason: 'context_not_in_pdf' });
       continue;
     }

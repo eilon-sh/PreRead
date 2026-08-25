@@ -1,6 +1,11 @@
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '#auth.js';
-import { extractSessionCacheKey, getCachedSession, setCachedSession } from '#utils/sessionCache.js';
+import {
+  deleteCachedSession,
+  extractSessionCacheKey,
+  getCachedSession,
+  setCachedSession,
+} from '#utils/sessionCache.js';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
 const PUBLIC_API_PREFIXES = ['/api/auth'];
@@ -49,6 +54,14 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     return res.redirect('/login');
+  }
+  next();
+}
+
+// מנקה מטמון סשן ביציאה
+export function clearSessionCacheOnSignOut(req, _res, next) {
+  if (req.method === 'POST' && req.path.endsWith('/sign-out')) {
+    deleteCachedSession(extractSessionCacheKey(req.headers.cookie));
   }
   next();
 }

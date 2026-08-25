@@ -7,7 +7,7 @@ import morgan from 'morgan';
 import { auth } from '#auth.js';
 import config from '#config.js';
 import prisma, { seedAchievements } from '#db/prisma.js';
-import { loadSession, requireAuth } from '#middleware/auth.js';
+import { clearSessionCacheOnSignOut, loadSession, requireAuth } from '#middleware/auth.js';
 import { errorHandler, notFoundHandler } from '#middleware/errorHandler.js';
 import {
   apiLimiter,
@@ -43,7 +43,7 @@ app.use(hppMiddleware);
 
 // Better Auth חייב להופיע לפני express.json כי הוא ממש את זה בעצמו
 app.post('/api/auth/request-password-reset', passwordResetEmailLimiter, toNodeHandler(auth));
-app.all('/api/auth/{*splat}', authLimiter, toNodeHandler(auth));
+app.all('/api/auth/{*splat}', authLimiter, clearSessionCacheOnSignOut, toNodeHandler(auth));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

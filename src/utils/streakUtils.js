@@ -1,3 +1,5 @@
+import { addDays } from '#utils/dateUtils.js';
+
 /**
  * Compute streak fields after a study day.
  * Same calendar day → unchanged. Consecutive day → increment. Gap or first day → reset to 1.
@@ -16,9 +18,7 @@ export function computeStreakUpdate(stats, todayStr) {
 
   let currentStreak;
   if (stats.lastStudyDate) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    const yesterdayStr = addDays(todayStr, -1);
     currentStreak = stats.lastStudyDate === yesterdayStr ? stats.currentStreak + 1 : 1;
   } else {
     currentStreak = 1;

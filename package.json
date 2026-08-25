@@ -18,7 +18,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
-    "test": "node test/parseIntUtils.test.js && node test/sourceGrounding.test.js && node test/csvWords.test.js && node test/e2e.js",
+    "test": "node --test test/*.test.js && node test/e2e.js",
     "check": "prettier --check .",
     "fix": "prettier --write ."
   },

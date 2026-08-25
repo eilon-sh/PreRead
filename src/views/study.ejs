@@ -12,8 +12,9 @@
     <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
+    <%- include('partials/skip-link') %>
     <%- include('partials/nav') %>
-    <main class="container app-container">
+    <main id="main-content" class="container app-container" tabindex="-1">
       <div class="study-title-row">
         <div class="study-title-text">
           <h1 class="h3">לימוד עם SM-2</h1>
@@ -28,7 +29,13 @@
 
       <div id="xpToast" class="xp-toast hidden"></div>
 
-      <section class="card mb-4 flashcard-container text-center" id="flashcardArea">
+      <section
+        class="card mb-4 flashcard-container text-center"
+        id="flashcardArea"
+        aria-live="polite"
+        aria-label="כרטיס לימוד"
+        tabindex="-1"
+      >
         <div class="card-body" style="min-height: 300px">
           <p class="text-muted mb-0">טוען כרטיסים...</p>
         </div>

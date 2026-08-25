@@ -13,11 +13,13 @@
     <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
+    <%- include('partials/skip-link') %>
     <%- include('partials/nav') %>
-    <main class="container app-container">
+    <main id="main-content" class="container app-container" tabindex="-1">
       <header class="words-page-header">
         <h1 class="h3 mb-1">מילים</h1>
-        <p class="subtitle text-muted mb-0">רשימת אוצר המילים שלך ללימוד ולהדפסה</p>
+        <p class="document-filename text-muted mb-1" id="documentFilename" hidden></p>
+        <!-- <p class="subtitle text-muted mb-0">רשימת אוצר המילים שלך ללימוד ולהדפסה</p> -->
       </header>
 
       <section class="card mb-4 words-card">

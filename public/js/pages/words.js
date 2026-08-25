@@ -11,7 +11,9 @@
   const deleteDocBtn = document.getElementById('deleteDocBtn');
   const wordsSummary = document.getElementById('wordsSummary');
   const wordsToolbar = document.getElementById('wordsToolbar');
+  const documentFilenameEl = document.getElementById('documentFilename');
   const printMode = params.get('printCards') === '1';
+  let cachedDocumentName = 'המסמך';
 
   if (printMode) {
     document.body.classList.add('print-preview');
@@ -304,17 +306,27 @@
     }
   }
 
-  // מביא שם מסמך לתצוגה
-  async function getDocumentName() {
-    const doc = await fetchDocument();
-    return doc?.filename || 'המסמך';
+  // מציג שם קובץ בכותרת (textContent, לא innerHTML)
+  function setDocumentFilename(name) {
+    if (!documentFilenameEl) return;
+    const fullName = name || 'המסמך';
+    cachedDocumentName = fullName;
+    documentFilenameEl.textContent = truncateFilename(fullName, 80);
+    documentFilenameEl.title = fullName;
+    documentFilenameEl.hidden = false;
   }
+
+  const documentRequest = fetchDocument();
+  documentRequest.then((doc) => {
+    setDocumentFilename(doc?.filename || 'המסמך');
+  });
 
   // מוחק מסמך אחרי אישור משתמש
   async function handleDeleteDocument() {
     if (!documentId || !deleteDocBtn) return;
 
-    const docName = await getDocumentName();
+    await documentRequest;
+    const docName = cachedDocumentName;
     const shouldDelete = await showConfirmAlert({
       title: 'מחיקת מסמך',
       text: `למחוק את "${docName}"?`,
@@ -357,7 +369,7 @@
 
     if (data.words.length === 0) {
       if (printCardsLink) printCardsLink.hidden = true;
-      const doc = await fetchDocument();
+      const doc = await documentRequest;
       setDeleteButtonVisible(Boolean(doc));
       if (wordsSummary) wordsSummary.hidden = true;
       const emptyMessage = doc

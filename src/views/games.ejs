@@ -12,8 +12,9 @@
     <script defer src="/js/shared/api.js"></script>
   </head>
   <body>
+    <%- include('partials/skip-link') %>
     <%- include('partials/nav') %>
-    <main class="container app-container">
+    <main id="main-content" class="container app-container" tabindex="-1">
       <h1 class="h3">משחקי מילים</h1>
       <p class="subtitle text-muted">תרגל את האוצר מילים שלך בדרך מהנה וצבור XP</p>
 

@@ -6,6 +6,15 @@
   margin-bottom: 0;
 }
 
+.words-page-header .document-filename {
+  max-width: 100%;
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .words-card .card-body {
   padding: 1.25rem 1.25rem 1rem;
 }

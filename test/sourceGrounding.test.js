@@ -139,6 +139,50 @@ const sample = (overrides = {}) => ({
 
 {
   const { kept, dropped } = filterWordsBySource(
+    [sample({ word: 'café', context: 'A café was tested' })],
+    'A café was tested in the study.',
+  );
+  assert.equal(dropped.length, 0);
+  assert.equal(kept.length, 1);
+  assert.equal(kept[0].word, 'café');
+}
+
+{
+  const { kept, dropped } = filterWordsBySource(
+    [sample({ word: 'state', context: 'The nation-state was tested' })],
+    'The nation-state was tested in the study.',
+  );
+  assert.equal(kept.length, 0);
+  assert.equal(dropped[0].reason, 'word_not_in_pdf');
+}
+
+{
+  const { kept, dropped } = filterWordsBySource(
+    [sample({ word: 'analysis', context: 'The analysis, however, was incomplete' })],
+    'The analysis however was incomplete.',
+  );
+  assert.equal(dropped.length, 0);
+  assert.equal(kept.length, 1);
+}
+
+{
+  assert.equal(normalizeSourceText('imple\u00ADmentation'), 'implementation');
+
+  const { kept, dropped } = filterWordsBySource(
+    [
+      sample({
+        word: 'implementation',
+        context: 'The implementation of this hypothesis was tested.',
+      }),
+    ],
+    'The imple\u00ADmentation of this hypothesis was tested.',
+  );
+  assert.equal(kept.length, 1);
+  assert.equal(dropped.length, 0);
+}
+
+{
+  const { kept, dropped } = filterWordsBySource(
     [sample({ word: 'the', context: 'A thesis was published' })],
     'A thesis was published.',
   );
